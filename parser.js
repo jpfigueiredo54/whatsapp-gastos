@@ -40,8 +40,9 @@ async function parseExpense(message) {
 
   const text = response.content[0]?.text?.trim();
 
- console.log("Resposta da IA:", text);
-if (!text || text === "null") return null;
+  console.log("Resposta da IA:", text);
+
+  if (!text || text === "null") return null;
 
   try {
     const clean = text.replace(/```json|```/g, "").trim();
@@ -50,5 +51,6 @@ if (!text || text === "null") return null;
     console.error("Falha ao parsear JSON:", text);
     return null;
   }
+}
 
 module.exports = { parseExpense };
