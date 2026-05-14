@@ -1,6 +1,7 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet } = require("./sheets");
+let appendToSheet;
+setTimeout(() => { appendToSheet = require("./sheets").appendToSheet; }, 0);
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
