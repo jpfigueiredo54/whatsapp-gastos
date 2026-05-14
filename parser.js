@@ -44,11 +44,11 @@ async function parseExpense(message) {
 if (!text || text === "null") return null;
 
   try {
-    return JSON.parse(text);
+    const clean = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(clean);
   } catch {
     console.error("Falha ao parsear JSON:", text);
     return null;
   }
-}
 
 module.exports = { parseExpense };
