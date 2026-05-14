@@ -40,7 +40,8 @@ async function parseExpense(message) {
 
   const text = response.content[0]?.text?.trim();
 
-  if (!text || text === "null") return null;
+ console.log("Resposta da IA:", text);
+if (!text || text === "null") return null;
 
   try {
     return JSON.parse(text);
