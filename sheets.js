@@ -19,7 +19,7 @@ async function appendToSheet(expense, pessoa) {
   const values = [
     [
       expense.data,
-      expense.valor,
+      expense.valor.replace(".", ","),
       expense.categoria,
       expense.descricao,
       expense.metodo_pagamento,
