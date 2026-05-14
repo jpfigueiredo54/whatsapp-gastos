@@ -1,53 +1,43 @@
-const Anthropic = require("@anthropic-ai/sdk");
+const express = require("express");
+const { parseExpense } = require("./parser");
+const { appendToSheet } = require("./sheets");
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const app = express();
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-const today = () => {
-  const d = new Date();
-  return d.toLocaleDateString("pt-BR");
-};
+const PESSOAS = JSON.parse(process.env.PESSOAS_JSON || "{}");
 
-const SYSTEM_PROMPT = `Você é um assistente que extrai informações de gastos a partir de mensagens em português.
-
-Retorne APENAS um JSON válido com exatamente estas chaves:
-{
-  "data": "DD/MM/AAAA",
-  "valor": "00.00",
-  "categoria": "string",
-  "descricao": "string",
-  "metodo_pagamento": "crédito | débito | pix | dinheiro | outro",
-  "cartao": "nome do cartão ou banco, ou null se não mencionado"
+function identificarPessoa(numeroWhatsapp) {
+  return PESSOAS[numeroWhatsapp] || numeroWhatsapp.replace("whatsapp:+", "+");
 }
 
-Regras:
-- "data": use a data mencionada. Se não houver, use a data de hoje: ${today()}
-- "valor": apenas número com duas casas decimais, sem R$
-- "categoria": infira uma categoria razoável (Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro)
-- "descricao": descrição curta e clara do gasto
-- "metodo_pagamento": infira pelo contexto. Se não mencionado, use "não informado"
-- "cartao": nome do banco/cartão se mencionado (ex: Nubank, Inter, Itaú, C6), senão null
+app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
 
-Se a mensagem não parecer um gasto, retorne null.
-Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
+app.post("/webhook", async (req, res) => {
+  const from = req.body.From || "";
+  const body = (req.body.Body || "").trim();
+  const pessoa = identificarPessoa(from);
 
-async function parseExpense(message) {
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 300,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: message }],
-  });
+  const twimlReply = (msg) =>
+    res.set("Content-Type", "text/xml").send(`<Response><Message>${msg}</Message></Response>`);
 
-  const text = response.content[0]?.text?.trim();
-
-  if (!text || text === "null") return null;
+  if (!body) return twimlReply("Não entendi. Tente: 'Almoço 45 reais no cartão Nubank débito'");
 
   try {
-    return JSON.parse(text);
-  } catch {
-    console.error("Falha ao parsear JSON:", text);
-    return null;
-  }
-}
+    const expense = await parseExpense(body);
+    if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'");
 
-module.exports = { parseExpense };
+    await appendToSheet(expense, pessoa);
+
+    return twimlReply(
+      `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`
+    );
+  } catch (err) {
+    console.error("Erro:", err);
+    return twimlReply("❌ Erro interno. Tente novamente em instantes.");
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
