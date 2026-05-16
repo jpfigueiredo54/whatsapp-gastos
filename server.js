@@ -1,6 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, getResumoMes } = require("./sheets");
+const { appendToSheet, getResumoMes, verificarAlertaBudget } = require("./sheets");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -35,9 +35,14 @@ app.post("/webhook", async (req, res) => {
 
     await appendToSheet(expense, pessoa);
 
-    return twimlReply(
-      `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`
-    );
+    const valorNumerico = parseFloat(expense.valor.replace(",", "."));
+    const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
+
+    let reply = `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+
+    if (alerta) reply += `\n\n${alerta}`;
+
+    return twimlReply(reply);
   } catch (err) {
     console.error("Erro:", err);
     return twimlReply("❌ Erro interno. Tente novamente em instantes.");
