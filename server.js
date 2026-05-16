@@ -1,6 +1,7 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, appendParcela, registrarParcelasMes, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
+const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget } = require("./sheets");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -72,13 +73,11 @@ Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro`;
 
 app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
 
-// Rota do GitHub Actions para registrar parcelas mensais
 app.post("/parcelas/registrar", async (req, res) => {
   const secret = req.headers["x-cron-secret"];
   if (secret !== process.env.CRON_SECRET) {
     return res.status(401).json({ error: "Não autorizado" });
   }
-
   try {
     const resultado = await registrarParcelasMes();
     return res.json({ sucesso: true, registradas: resultado });
