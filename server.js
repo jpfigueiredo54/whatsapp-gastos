@@ -72,7 +72,7 @@ Corrige o último lançamento registrado por você.
 Mostra esta mensagem.
 
 _Categorias disponíveis:_
-Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro`;
+Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Viagem, Outro`;
 
 app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
 
