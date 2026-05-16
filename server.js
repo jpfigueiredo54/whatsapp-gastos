@@ -7,7 +7,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 const PESSOAS = JSON.parse(process.env.PESSOAS_JSON || "{}");
-const pendentes = {}; // número → gasto aguardando confirmação
+const pendentes = {};   // número → gasto aguardando confirmação
+const editando = {};    // número → true se aguardando gasto corrigido
 
 function identificarPessoa(numeroWhatsapp) {
   return PESSOAS[numeroWhatsapp] || numeroWhatsapp.replace("whatsapp:+", "+");
@@ -48,7 +49,30 @@ app.post("/webhook", async (req, res) => {
   if (!body) return twimlReply(AJUDA);
 
   try {
-    // Confirmação pendente
+
+    // Fluxo de edição — aguardando gasto corrigido
+    if (editando[from]) {
+      if (body.toLowerCase() === "cancelar") {
+        delete editando[from];
+        return twimlReply("❌ Edição cancelada.");
+      }
+
+      const expense = await parseExpense(body);
+      if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente novamente ou mande *cancelar* para sair.");
+
+      await deletarUltimoLancamento(pessoa);
+      delete editando[from];
+
+      const valorNumerico = parseFloat(expense.valor.replace(",", "."));
+      const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
+      await appendToSheet(expense, pessoa);
+
+      let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+      if (alerta) reply += `\n\n${alerta}`;
+      return twimlReply(reply);
+    }
+
+    // Fluxo de confirmação — aguardando sim/não
     if (pendentes[from]) {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
@@ -85,19 +109,13 @@ app.post("/webhook", async (req, res) => {
     if (body.toLowerCase() === "/editar") {
       const ultimo = await getUltimoLancamento(pessoa);
       if (!ultimo) return twimlReply("❌ Nenhum lançamento encontrado para editar.");
+      editando[from] = true;
       return twimlReply(`✏️ Último lançamento:\n📅 ${ultimo.data}\n💰 R$ ${ultimo.valor}\n🏷️ ${ultimo.categoria}\n📝 ${ultimo.descricao}\n💳 ${ultimo.metodo}\n\nMande o gasto corrigido ou *cancelar* para sair.`);
-    }
-
-    if (body.toLowerCase() === "/editar confirmar") {
-      const deletado = await deletarUltimoLancamento(pessoa);
-      if (!deletado) return twimlReply("❌ Não encontrei lançamento para deletar.");
-      return twimlReply("🗑️ Último lançamento removido. Mande o gasto corrigido agora.");
     }
 
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
-    // Guardar como pendente e pedir confirmação
     pendentes[from] = expense;
     return twimlReply(
       `📋 Confirmar gasto?\n\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n\nResponda *sim* para confirmar ou *não* para cancelar.`
