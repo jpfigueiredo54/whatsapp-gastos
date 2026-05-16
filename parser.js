@@ -16,16 +16,26 @@ Retorne APENAS um JSON válido com exatamente estas chaves:
   "categoria": "string",
   "descricao": "string",
   "metodo_pagamento": "crédito | débito | pix | dinheiro | outro",
-  "cartao": "nome do cartão ou banco, ou null se não mencionado"
+  "cartao": "nome do cartão ou banco, ou null se não mencionado",
+  "parcelado": false,
+  "total_parcelas": null,
+  "valor_parcela": null
 }
 
 Regras:
 - "data": use a data mencionada. Se não houver, use a data de hoje: ${today()}
-- "valor": apenas número com duas casas decimais, sem R$
+- "valor": se parcelado, use o valor TOTAL (parcela x total). Se não parcelado, valor informado
+- "valor_parcela": se parcelado, valor de cada parcela. Senão null
+- "total_parcelas": número total de parcelas se mencionado. Senão null
+- "parcelado": true se mencionar parcelas, vezes, x, prestações. Senão false
 - "categoria": infira uma categoria razoável (Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro)
 - "descricao": descrição curta e clara do gasto
 - "metodo_pagamento": infira pelo contexto. Se não mencionado, use "não informado"
 - "cartao": nome do banco/cartão se mencionado (ex: Nubank, Inter, Itaú, C6), senão null
+
+Exemplos de parcelamento:
+- "TV 12x de 350" → parcelado: true, total_parcelas: 12, valor_parcela: "350.00", valor: "4200.00"
+- "Comprei um notebook em 6 vezes de 500 no Nubank" → parcelado: true, total_parcelas: 6, valor_parcela: "500.00", valor: "3000.00"
 
 Se a mensagem não parecer um gasto, retorne null.
 Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
@@ -39,8 +49,6 @@ async function parseExpense(message) {
   });
 
   const text = response.content[0]?.text?.trim();
-
-  console.log("Resposta da IA:", text);
 
   if (!text || text === "null") return null;
 
