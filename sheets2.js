@@ -343,7 +343,6 @@ async function getComparativo() {
 }
 
 async function getParcelasAbertas() {
-  console.log("🔍 Buscando parcelas...");
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -364,9 +363,22 @@ async function getParcelasAbertas() {
 
   if (abertas.length === 0) return "✅ Nenhuma parcela em aberto. Parabéns!";
 
-  const totalMensal = abertas.reduce((acc, row) => {
-    return acc + parseFloat((row[1] || "0").replace(",", "."));
-  }, 0);
+  // Calcula projeção dos próximos 3 meses
+  const agora = new Date();
+  const projecao = [0, 1, 2, 3].map(offset => {
+    const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
+    const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
+    const total = abertas.reduce((acc, row) => {
+      const totalParcelas = parseInt(row[6] || "0");
+      const parcelasPagas = parseInt(row[7] || "0");
+      const restantes = totalParcelas - parcelasPagas;
+      if (restantes > offset) {
+        return acc + parseFloat((row[1] || "0").replace(",", "."));
+      }
+      return acc;
+    }, 0);
+    return { nomeMes, total };
+  });
 
   const totalRestanteGeral = abertas.reduce((acc, row) => {
     const val = parseFloat((row[1] || "0").replace(",", "."));
@@ -376,9 +388,14 @@ async function getParcelasAbertas() {
   }, 0);
 
   let msg = `💳 Parcelas em aberto (${abertas.length})\n`;
-  msg += `💰 Mensal: R$ ${totalMensal.toFixed(2).replace(".", ",")}\n`;
   msg += `📊 Total restante: R$ ${totalRestanteGeral.toFixed(2).replace(".", ",")}\n\n`;
 
+  msg += `📅 Projeção:\n`;
+  projecao.forEach(({ nomeMes, total }) => {
+    msg += `• ${nomeMes}: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+  });
+
+  msg += `\n📋 Parcelas:\n`;
   abertas.forEach(row => {
     const descricao = row[0] || "?";
     const valorParcela = parseFloat((row[1] || "0").replace(",", "."));
