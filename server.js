@@ -151,15 +151,7 @@ app.post("/webhook", async (req, res) => {
     if (body.toLowerCase() === "/relatorio") return twimlReply(await getRelatorioSemana());
     if (body.toLowerCase() === "/fechamento") return twimlReply(await getFechamentoMes());
     if (body.toLowerCase() === "/comparar") return twimlReply(await getComparativo());
-
-    if (body.toLowerCase() === "/parcelas") {
-      getParcelasAbertas().then(msg => {
-        console.log("✅ Parcelas processadas:", msg.substring(0, 100));
-      }).catch(err => {
-        console.error("❌ Erro parcelas:", err.message);
-      });
-      return twimlReply("⏳ Buscando suas parcelas... manda /parcelas de novo em 3 segundos.");
-    }
+    if (body.toLowerCase() === "/parcelas") return twimlReply(await getParcelasAbertas());
 
     if (body.toLowerCase() === "/editar") {
       const ultimo = await getUltimoLancamento(pessoa);
