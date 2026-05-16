@@ -363,34 +363,43 @@ async function getParcelasAbertas() {
 
   if (abertas.length === 0) return "✅ Nenhuma parcela em aberto. Parabéns!";
 
-  // Calcula projeção dos próximos 3 meses
+  // Projeção dos próximos 3 meses
   const agora = new Date();
   const projecao = [0, 1, 2, 3].map(offset => {
     const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
     const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
     const total = abertas.reduce((acc, row) => {
-      const totalParcelas = parseInt(row[6] || "0");
-      const parcelasPagas = parseInt(row[7] || "0");
-      const restantes = totalParcelas - parcelasPagas;
-      if (restantes > offset) {
-        return acc + parseFloat((row[1] || "0").replace(",", "."));
-      }
-      return acc;
+      const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
+      return restantes > offset ? acc + parseFloat((row[1] || "0").replace(",", ".")) : acc;
     }, 0);
     return { nomeMes, total };
   });
 
   const totalRestanteGeral = abertas.reduce((acc, row) => {
     const val = parseFloat((row[1] || "0").replace(",", "."));
-    const total = parseInt(row[6] || "0");
-    const pagas = parseInt(row[7] || "0");
-    return acc + val * (total - pagas);
+    const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
+    return acc + val * restantes;
   }, 0);
+
+  // Agrupa por cartão
+  const porCartao = {};
+  abertas.forEach(row => {
+    const cartao = row[3] || "Outros";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porCartao[cartao] = (porCartao[cartao] || 0) + val;
+  });
 
   let msg = `💳 Parcelas em aberto (${abertas.length})\n`;
   msg += `📊 Total restante: R$ ${totalRestanteGeral.toFixed(2).replace(".", ",")}\n\n`;
 
-  msg += `📅 Projeção:\n`;
+  msg += `💳 Por cartão (mensal):\n`;
+  Object.entries(porCartao)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cartao, val]) => {
+      msg += `• ${cartao}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+    });
+
+  msg += `\n📅 Projeção:\n`;
   projecao.forEach(({ nomeMes, total }) => {
     msg += `• ${nomeMes}: R$ ${total.toFixed(2).replace(".", ",")}\n`;
   });
@@ -399,10 +408,9 @@ async function getParcelasAbertas() {
   abertas.forEach(row => {
     const descricao = row[0] || "?";
     const valorParcela = parseFloat((row[1] || "0").replace(",", "."));
-    const totalParcelas = parseInt(row[6] || "0");
-    const parcelasPagas = parseInt(row[7] || "0");
-    const restantes = totalParcelas - parcelasPagas;
-    msg += `• ${descricao}: R$ ${valorParcela.toFixed(2).replace(".", ",")} x${restantes}\n`;
+    const cartao = row[3] || "";
+    const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
+    msg += `• ${descricao} (${cartao}): R$ ${valorParcela.toFixed(2).replace(".", ",")} x${restantes}\n`;
   });
 
   return msg;
