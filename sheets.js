@@ -15,7 +15,7 @@ async function appendToSheet(expense, pessoa) {
 
   const values = [[
     expense.data,
-    expense.valor.replace(".", ","),
+    expense.valor_parcela ? expense.valor_parcela.replace(".", ",") : expense.valor.replace(".", ","),
     expense.categoria,
     expense.descricao,
     expense.metodo_pagamento,
@@ -26,6 +26,31 @@ async function appendToSheet(expense, pessoa) {
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: "Gastos!A:G",
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values },
+  });
+}
+
+async function appendParcela(expense, pessoa) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const values = [[
+    expense.descricao,
+    expense.valor_parcela.replace(".", ","),
+    expense.categoria,
+    expense.cartao || "",
+    expense.metodo_pagamento,
+    pessoa || "",
+    expense.total_parcelas,
+    1,
+  ]];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "Parcelas!A:H",
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values },
@@ -99,9 +124,9 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
   const percentual = (gastoTotal / limite) * 100;
 
   if (percentual >= 100) {
-    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "Cuidar do dinheiro é cuidar da sua liberdade."`;
+    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)`;
   } else if (percentual >= 80) {
-    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "O segredo da riqueza está nos pequenos gastos que evitamos."`;
+    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)`;
   }
   return null;
 }
@@ -165,8 +190,6 @@ async function getResumoMes() {
     .forEach(([pessoa, val]) => {
       msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
     });
-
-  msg += `\n💡 "Pequenos gastos fazem grandes buracos." — Benjamin Franklin`;
 
   return msg;
 }
@@ -510,4 +533,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { appendToSheet, appendParcela, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
