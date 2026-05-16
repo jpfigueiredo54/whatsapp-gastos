@@ -217,6 +217,91 @@ async function getResumoCategoria(categoria) {
   return msg;
 }
 
+async function getRelatorioSemana() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  if (rows.length <= 1) return "📅 Nenhum gasto registrado ainda.";
+
+  const agora = new Date();
+  const diaSemana = agora.getDay();
+  const diasAteSeg = diaSemana === 0 ? 6 : diaSemana - 1;
+
+  const inicioSemanaAtual = new Date(agora);
+  inicioSemanaAtual.setDate(agora.getDate() - diasAteSeg);
+  inicioSemanaAtual.setHours(0, 0, 0, 0);
+
+  const inicioSemanaAnterior = new Date(inicioSemanaAtual);
+  inicioSemanaAnterior.setDate(inicioSemanaAtual.getDate() - 7);
+
+  const fimSemanaAnterior = new Date(inicioSemanaAtual);
+  fimSemanaAnterior.setDate(inicioSemanaAtual.getDate() - 1);
+  fimSemanaAnterior.setHours(23, 59, 59, 999);
+
+  const parsearData = (str) => {
+    const p = str.split("/");
+    if (p.length < 3) return null;
+    return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+  };
+
+  const gastosSemana = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const d = parsearData(row[0]);
+    if (!d) return false;
+    return d >= inicioSemanaAnterior && d <= fimSemanaAnterior;
+  });
+
+  const dataInicioStr = inicioSemanaAnterior.toLocaleDateString("pt-BR");
+  const dataFimStr = fimSemanaAnterior.toLocaleDateString("pt-BR");
+
+  if (gastosSemana.length === 0) return `📅 Nenhum gasto registrado na semana de ${dataInicioStr} a ${dataFimStr}.`;
+
+  const total = gastosSemana.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+
+  const porCategoria = {};
+  gastosSemana.forEach(row => {
+    const cat = row[2] || "Outro";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porCategoria[cat] = (porCategoria[cat] || 0) + val;
+  });
+
+  const porPessoa = {};
+  gastosSemana.forEach(row => {
+    const pessoa = row[6] || "Desconhecido";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+  });
+
+  let msg = `📅 Relatório semanal\n`;
+  msg += `🗓️ ${dataInicioStr} a ${dataFimStr}\n`;
+  msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n\n`;
+
+  msg += `📂 Por categoria:\n`;
+  Object.entries(porCategoria)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cat, val]) => {
+      msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+    });
+
+  msg += `\n👤 Por pessoa:\n`;
+  Object.entries(porPessoa)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([pessoa, val]) => {
+      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+    });
+
+  msg += `\n💡 "A disciplina financeira de hoje é a liberdade de amanhã."`;
+
+  return msg;
+}
+
 async function getUltimoLancamento(pessoa) {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -273,4 +358,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { appendToSheet, getResumoMes, getResumoCategoria, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
