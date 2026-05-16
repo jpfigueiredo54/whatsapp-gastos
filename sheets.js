@@ -57,6 +57,71 @@ async function appendParcela(expense, pessoa) {
   });
 }
 
+async function registrarParcelasMes() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Parcelas!A:H",
+  });
+
+  const rows = res.data.values || [];
+  if (rows.length <= 1) return 0;
+
+  const agora = new Date();
+  const dataHoje = agora.toLocaleDateString("pt-BR");
+  let registradas = 0;
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const descricao = row[0] || "";
+    const valorParcela = row[1] || "0";
+    const categoria = row[2] || "Outro";
+    const cartao = row[3] || "";
+    const metodo = row[4] || "crédito";
+    const pessoa = row[5] || "";
+    const totalParcelas = parseInt(row[6] || "0");
+    const parcelasPagas = parseInt(row[7] || "0");
+
+    if (parcelasPagas >= totalParcelas) continue;
+
+    // Registra a parcela na aba Gastos
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: "Gastos!A:G",
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [[
+          dataHoje,
+          valorParcela,
+          categoria,
+          `${descricao} (parcela ${parcelasPagas + 1}/${totalParcelas})`,
+          metodo,
+          cartao,
+          pessoa,
+        ]],
+      },
+    });
+
+    // Atualiza parcelas pagas
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Parcelas!H${i + 1}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [[parcelasPagas + 1]],
+      },
+    });
+
+    registradas++;
+  }
+
+  return registradas;
+}
+
 async function getBudgets() {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -520,17 +585,4 @@ async function deletarUltimoLancamento(pessoa) {
       requests: [{
         deleteDimension: {
           range: {
-            sheetId: 0,
-            dimension: "ROWS",
-            startIndex: ultimo.linha - 1,
-            endIndex: ultimo.linha,
-          },
-        },
-      }],
-    },
-  });
-
-  return true;
-}
-
-module.exports = { appendToSheet, appendParcela, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
+            sheet
