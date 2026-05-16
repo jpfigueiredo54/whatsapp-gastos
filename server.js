@@ -7,8 +7,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 const PESSOAS = JSON.parse(process.env.PESSOAS_JSON || "{}");
-const pendentes = {};   // número → gasto aguardando confirmação
-const editando = {};    // número → true se aguardando gasto corrigido
+const pendentes = {};
+const editando = {};
 
 function identificarPessoa(numeroWhatsapp) {
   return PESSOAS[numeroWhatsapp] || numeroWhatsapp.replace("whatsapp:+", "+");
@@ -50,7 +50,7 @@ app.post("/webhook", async (req, res) => {
 
   try {
 
-    // Fluxo de edição — aguardando gasto corrigido
+    // PRIORIDADE 1: fluxo de edição
     if (editando[from]) {
       if (body.toLowerCase() === "cancelar") {
         delete editando[from];
@@ -72,7 +72,7 @@ app.post("/webhook", async (req, res) => {
       return twimlReply(reply);
     }
 
-    // Fluxo de confirmação — aguardando sim/não
+    // PRIORIDADE 2: fluxo de confirmação
     if (pendentes[from]) {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
@@ -91,6 +91,7 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
+    // PRIORIDADE 3: comandos
     if (body.toLowerCase() === "/ajuda") {
       return twimlReply(AJUDA);
     }
@@ -113,6 +114,7 @@ app.post("/webhook", async (req, res) => {
       return twimlReply(`✏️ Último lançamento:\n📅 ${ultimo.data}\n💰 R$ ${ultimo.valor}\n🏷️ ${ultimo.categoria}\n📝 ${ultimo.descricao}\n💳 ${ultimo.metodo}\n\nMande o gasto corrigido ou *cancelar* para sair.`);
     }
 
+    // PRIORIDADE 4: novo gasto
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
