@@ -32,6 +32,68 @@ async function appendToSheet(expense, pessoa) {
   });
 }
 
+async function getBudgets() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Budget!A:B",
+  });
+
+  const rows = res.data.values || [];
+  const budgets = {};
+  rows.slice(1).forEach(row => {
+    if (row[0] && row[1]) {
+      budgets[row[0]] = parseFloat(row[1].toString().replace(",", "."));
+    }
+  });
+  return budgets;
+}
+
+async function getGastosMesCategoria(categoria) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  return rows.slice(1)
+    .filter(row => {
+      if (!row[0] || row[2] !== categoria) return false;
+      const partes = row[0].split("/");
+      if (partes.length < 3) return false;
+      return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+    })
+    .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+}
+
+async function verificarAlertaBudget(categoria, valorNovoGasto) {
+  const budgets = await getBudgets();
+  const limite = budgets[categoria];
+  if (!limite) return null;
+
+  const gastoAtual = await getGastosMesCategoria(categoria);
+  const gastoTotal = gastoAtual + valorNovoGasto;
+  const percentual = (gastoTotal / limite) * 100;
+
+  if (percentual >= 100) {
+    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")}`;
+  } else if (percentual >= 80) {
+    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")}`;
+  }
+  return null;
+}
+
 async function getResumoMes() {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -53,9 +115,7 @@ async function getResumoMes() {
     if (!row[0]) return false;
     const partes = row[0].split("/");
     if (partes.length < 3) return false;
-    const mes = parseInt(partes[1]) - 1;
-    const ano = parseInt(partes[2]);
-    return mes === mesAtual && ano === anoAtual;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
   });
 
   if (gastosMes.length === 0) return "📊 Nenhum gasto registrado este mês.";
@@ -78,6 +138,7 @@ async function getResumoMes() {
     porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
   });
 
+  const budgets = await getBudgets();
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long" });
 
   let msg = `📊 Resumo de ${nomeMes}\n`;
@@ -87,7 +148,14 @@ async function getResumoMes() {
   Object.entries(porCategoria)
     .sort((a, b) => b[1] - a[1])
     .forEach(([cat, val]) => {
-      msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      const limite = budgets[cat];
+      if (limite) {
+        const pct = ((val / limite) * 100).toFixed(0);
+        const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+        msg += `${emoji} ${cat}: R$ ${val.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+      } else {
+        msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      }
     });
 
   msg += `\n👤 Por pessoa:\n`;
@@ -100,4 +168,4 @@ async function getResumoMes() {
   return msg;
 }
 
-module.exports = { appendToSheet, getResumoMes };
+module.exports = { appendToSheet, getResumoMes, verificarAlertaBudget };
