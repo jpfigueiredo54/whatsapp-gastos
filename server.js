@@ -1,6 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, getResumoMes, getResumoCategoria, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
+const { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -27,6 +27,9 @@ Resumo completo do mês atual por categoria e pessoa.
 Detalhes de uma categoria específica.
 Ex: /resumo Alimentação
 
+📅 */relatorio*
+Resumo da semana anterior.
+
 ✏️ */editar*
 Corrige o último lançamento registrado por você.
 
@@ -50,29 +53,23 @@ app.post("/webhook", async (req, res) => {
 
   try {
 
-    // PRIORIDADE 1: fluxo de edição
     if (editando[from]) {
       if (body.toLowerCase() === "cancelar") {
         delete editando[from];
         return twimlReply("❌ Edição cancelada.");
       }
-
       const expense = await parseExpense(body);
       if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente novamente ou mande *cancelar* para sair.");
-
       await deletarUltimoLancamento(pessoa);
       delete editando[from];
-
       const valorNumerico = parseFloat(expense.valor.replace(",", "."));
       const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
       await appendToSheet(expense, pessoa);
-
       let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
       if (alerta) reply += `\n\n${alerta}`;
       return twimlReply(reply);
     }
 
-    // PRIORIDADE 2: fluxo de confirmação
     if (pendentes[from]) {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
@@ -91,20 +88,18 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // PRIORIDADE 3: comandos
-    if (body.toLowerCase() === "/ajuda") {
-      return twimlReply(AJUDA);
-    }
+    if (body.toLowerCase() === "/ajuda") return twimlReply(AJUDA);
 
     if (body.toLowerCase() === "/resumo") {
-      const resumo = await getResumoMes();
-      return twimlReply(resumo);
+      return twimlReply(await getResumoMes());
     }
 
     if (body.toLowerCase().startsWith("/resumo ")) {
-      const categoria = body.slice(8).trim();
-      const resumo = await getResumoCategoria(categoria);
-      return twimlReply(resumo);
+      return twimlReply(await getResumoCategoria(body.slice(8).trim()));
+    }
+
+    if (body.toLowerCase() === "/relatorio") {
+      return twimlReply(await getRelatorioSemana());
     }
 
     if (body.toLowerCase() === "/editar") {
@@ -114,7 +109,6 @@ app.post("/webhook", async (req, res) => {
       return twimlReply(`✏️ Último lançamento:\n📅 ${ultimo.data}\n💰 R$ ${ultimo.valor}\n🏷️ ${ultimo.categoria}\n📝 ${ultimo.descricao}\n💳 ${ultimo.metodo}\n\nMande o gasto corrigido ou *cancelar* para sair.`);
     }
 
-    // PRIORIDADE 4: novo gasto
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
