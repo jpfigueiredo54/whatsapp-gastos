@@ -139,7 +139,7 @@ async function getResumoMes() {
   });
 
   const budgets = await getBudgets();
-  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long" });
+  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   let msg = `📊 Resumo de ${nomeMes}\n`;
   msg += `💰 Total: R$ ${totalGeral.toFixed(2).replace(".", ",")}\n\n`;
@@ -197,7 +197,7 @@ async function getResumoCategoria(categoria) {
   const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
   const budgets = await getBudgets();
   const limite = budgets[categoria];
-  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long" });
+  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   let msg = `📂 *${categoria}* — ${nomeMes}\n`;
 
