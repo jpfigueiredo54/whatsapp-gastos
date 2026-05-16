@@ -1,7 +1,7 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
 const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -61,6 +61,9 @@ Relatório final do mês atual.
 
 📈 */comparar*
 Compara o mês atual com o mês anterior.
+
+💳 */parcelas*
+Lista todas as parcelas em aberto.
 
 ✏️ */editar*
 Corrige o último lançamento registrado por você.
@@ -148,6 +151,7 @@ app.post("/webhook", async (req, res) => {
     if (body.toLowerCase() === "/relatorio") return twimlReply(await getRelatorioSemana());
     if (body.toLowerCase() === "/fechamento") return twimlReply(await getFechamentoMes());
     if (body.toLowerCase() === "/comparar") return twimlReply(await getComparativo());
+    if (body.toLowerCase() === "/parcelas") return twimlReply(await getParcelasAbertas());
 
     if (body.toLowerCase() === "/editar") {
       const ultimo = await getUltimoLancamento(pessoa);
