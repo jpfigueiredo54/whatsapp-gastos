@@ -342,6 +342,56 @@ async function getComparativo() {
   return msg;
 }
 
+async function getParcelasAbertas() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Parcelas!A:H",
+  });
+
+  const rows = res.data.values || [];
+  if (rows.length <= 1) return "💳 Nenhuma parcela em aberto.";
+
+  const abertas = rows.slice(1).filter(row => {
+    const totalParcelas = parseInt(row[6] || "0");
+    const parcelasPagas = parseInt(row[7] || "0");
+    return parcelasPagas < totalParcelas;
+  });
+
+  if (abertas.length === 0) return "✅ Nenhuma parcela em aberto. Parabéns!";
+
+  const totalMensal = abertas.reduce((acc, row) => {
+    return acc + parseFloat((row[1] || "0").replace(",", "."));
+  }, 0);
+
+  let msg = `💳 Parcelas em aberto\n`;
+  msg += `${"─".repeat(25)}\n`;
+  msg += `💰 Compromisso mensal: R$ ${totalMensal.toFixed(2).replace(".", ",")}\n\n`;
+
+  abertas.forEach(row => {
+    const descricao = row[0] || "?";
+    const valorParcela = parseFloat((row[1] || "0").replace(",", "."));
+    const cartao = row[3] || "";
+    const responsavel = row[5] || "";
+    const totalParcelas = parseInt(row[6] || "0");
+    const parcelasPagas = parseInt(row[7] || "0");
+    const restantes = totalParcelas - parcelasPagas;
+    const totalRestante = valorParcela * restantes;
+
+    msg += `📦 ${descricao}\n`;
+    msg += `   💵 R$ ${valorParcela.toFixed(2).replace(".", ",")} x ${restantes} parcelas restantes\n`;
+    msg += `   💰 Total restante: R$ ${totalRestante.toFixed(2).replace(".", ",")}\n`;
+    if (cartao) msg += `   💳 ${cartao}\n`;
+    if (responsavel) msg += `   👤 ${responsavel}\n`;
+    msg += `\n`;
+  });
+
+  return msg.trim();
+}
+
 async function getUltimoLancamento(pessoa) {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -398,4 +448,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getUltimoLancamento, deletarUltimoLancamento };
