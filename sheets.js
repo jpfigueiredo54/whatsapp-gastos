@@ -87,9 +87,9 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
   const percentual = (gastoTotal / limite) * 100;
 
   if (percentual >= 100) {
-    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")}`;
+    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "Cuidar do dinheiro é cuidar da sua liberdade."`;
   } else if (percentual >= 80) {
-    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")}`;
+    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "O segredo da riqueza está nos pequenos gastos que evitamos."`;
   }
   return null;
 }
@@ -164,6 +164,8 @@ async function getResumoMes() {
     .forEach(([pessoa, val]) => {
       msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
     });
+
+  msg += `\n💡 "Pequenos gastos fazem grandes buracos." — Benjamin Franklin`;
 
   return msg;
 }
