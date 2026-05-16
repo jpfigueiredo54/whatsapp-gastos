@@ -52,7 +52,7 @@ async function getBudgets() {
   return budgets;
 }
 
-async function getGastosMesCategoria(categoria) {
+async function getGastosPorMes(mes, ano) {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -63,18 +63,30 @@ async function getGastosMesCategoria(categoria) {
   });
 
   const rows = res.data.values || [];
-  const agora = new Date();
-  const mesAtual = agora.getMonth();
-  const anoAtual = agora.getFullYear();
 
-  return rows.slice(1)
-    .filter(row => {
-      if (!row[0] || row[2] !== categoria) return false;
-      const partes = row[0].split("/");
-      if (partes.length < 3) return false;
-      return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
-    })
-    .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+  const gastos = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mes && parseInt(partes[2]) === ano;
+  });
+
+  const porCategoria = {};
+  let total = 0;
+  gastos.forEach(row => {
+    const cat = row[2] || "Outro";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porCategoria[cat] = (porCategoria[cat] || 0) + val;
+    total += val;
+  });
+
+  return { porCategoria, total };
+}
+
+async function getGastosMesCategoria(categoria) {
+  const agora = new Date();
+  const { porCategoria } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
+  return porCategoria[categoria] || 0;
 }
 
 async function verificarAlertaBudget(categoria, valorNovoGasto) {
@@ -95,6 +107,11 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
 }
 
 async function getResumoMes() {
+  const agora = new Date();
+  const { porCategoria, total } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
+
+  if (total === 0) return "📊 Nenhum gasto registrado este mês.";
+
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -105,9 +122,6 @@ async function getResumoMes() {
   });
 
   const rows = res.data.values || [];
-  if (rows.length <= 1) return "📊 Nenhum gasto registrado ainda.";
-
-  const agora = new Date();
   const mesAtual = agora.getMonth();
   const anoAtual = agora.getFullYear();
 
@@ -116,19 +130,6 @@ async function getResumoMes() {
     const partes = row[0].split("/");
     if (partes.length < 3) return false;
     return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
-  });
-
-  if (gastosMes.length === 0) return "📊 Nenhum gasto registrado este mês.";
-
-  const totalGeral = gastosMes.reduce((acc, row) => {
-    return acc + parseFloat((row[1] || "0").replace(",", "."));
-  }, 0);
-
-  const porCategoria = {};
-  gastosMes.forEach(row => {
-    const cat = row[2] || "Outro";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
-    porCategoria[cat] = (porCategoria[cat] || 0) + val;
   });
 
   const porPessoa = {};
@@ -142,7 +143,7 @@ async function getResumoMes() {
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   let msg = `📊 Resumo de ${nomeMes}\n`;
-  msg += `💰 Total: R$ ${totalGeral.toFixed(2).replace(".", ",")}\n\n`;
+  msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n\n`;
 
   msg += `📂 Por categoria:\n`;
   Object.entries(porCategoria)
@@ -303,6 +304,11 @@ async function getRelatorioSemana() {
 }
 
 async function getFechamentoMes() {
+  const agora = new Date();
+  const { porCategoria, total } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
+
+  if (total === 0) return "🏁 Nenhum gasto registrado este mês.";
+
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -313,9 +319,6 @@ async function getFechamentoMes() {
   });
 
   const rows = res.data.values || [];
-  if (rows.length <= 1) return "🏁 Nenhum gasto registrado ainda.";
-
-  const agora = new Date();
   const mesAtual = agora.getMonth();
   const anoAtual = agora.getFullYear();
 
@@ -324,17 +327,6 @@ async function getFechamentoMes() {
     const partes = row[0].split("/");
     if (partes.length < 3) return false;
     return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
-  });
-
-  if (gastosMes.length === 0) return "🏁 Nenhum gasto registrado este mês.";
-
-  const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
-
-  const porCategoria = {};
-  gastosMes.forEach(row => {
-    const cat = row[2] || "Outro";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
-    porCategoria[cat] = (porCategoria[cat] || 0) + val;
   });
 
   const porPessoa = {};
@@ -399,14 +391,65 @@ async function getFechamentoMes() {
   msg += `• Maior gasto: ${maiorGasto[0]} (R$ ${maiorGasto[1].toFixed(2).replace(".", ",")})\n`;
   msg += `• Quem mais gastou: ${maiorGastante[0]} (R$ ${maiorGastante[1].toFixed(2).replace(".", ",")})\n`;
 
-  if (categoriasEstouradas.length > 0) {
-    msg += `• Categorias estouradas: ${categoriasEstouradas.join(", ")}\n`;
-  }
-  if (categoriasDentro.length > 0) {
-    msg += `• Dentro do budget: ${categoriasDentro.join(", ")}\n`;
-  }
+  if (categoriasEstouradas.length > 0) msg += `• Categorias estouradas: ${categoriasEstouradas.join(", ")}\n`;
+  if (categoriasDentro.length > 0) msg += `• Dentro do budget: ${categoriasDentro.join(", ")}\n`;
 
   msg += `\n💡 "Quem controla seus gastos, controla seu futuro."`;
+
+  return msg;
+}
+
+async function getComparativo() {
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
+  const anoAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
+
+  const atual = await getGastosPorMes(mesAtual, anoAtual);
+  const anterior = await getGastosPorMes(mesAnterior, anoAnterior);
+
+  if (atual.total === 0 && anterior.total === 0) return "📈 Nenhum dado encontrado para comparar.";
+
+  const nomeAtual = agora.toLocaleDateString("pt-BR", { month: "long" });
+  const dataAnterior = new Date(anoAnterior, mesAnterior, 1);
+  const nomeAnterior = dataAnterior.toLocaleDateString("pt-BR", { month: "long" });
+
+  const diffTotal = atual.total - anterior.total;
+  const diffPct = anterior.total > 0 ? ((diffTotal / anterior.total) * 100).toFixed(0) : 0;
+  const emojiTotal = diffTotal > 0 ? "📈" : diffTotal < 0 ? "📉" : "➡️";
+
+  let msg = `📊 Comparativo: ${nomeAnterior} vs ${nomeAtual}\n`;
+  msg += `${"─".repeat(25)}\n`;
+  msg += `${emojiTotal} Total: R$ ${anterior.total.toFixed(2).replace(".", ",")} → R$ ${atual.total.toFixed(2).replace(".", ",")}\n`;
+
+  const sinal = diffTotal >= 0 ? "+" : "";
+  msg += `   ${sinal}R$ ${diffTotal.toFixed(2).replace(".", ",")} (${sinal}${diffPct}%)\n\n`;
+
+  msg += `📂 Por categoria:\n`;
+
+  const todasCategorias = new Set([
+    ...Object.keys(atual.porCategoria),
+    ...Object.keys(anterior.porCategoria),
+  ]);
+
+  Array.from(todasCategorias)
+    .sort()
+    .forEach(cat => {
+      const valAtual = atual.porCategoria[cat] || 0;
+      const valAnterior = anterior.porCategoria[cat] || 0;
+      const diff = valAtual - valAnterior;
+      const emoji = diff > 0 ? "📈" : diff < 0 ? "📉" : "➡️";
+      const sinalCat = diff >= 0 ? "+" : "";
+      msg += `${emoji} ${cat}: R$ ${valAnterior.toFixed(2).replace(".", ",")} → R$ ${valAtual.toFixed(2).replace(".", ",")}\n`;
+      msg += `   (${sinalCat}R$ ${diff.toFixed(2).replace(".", ",")})\n`;
+    });
+
+  const economia = diffTotal < 0;
+  msg += economia
+    ? `\n✅ Parabéns! Você gastou menos este mês.`
+    : `\n⚠️ Você gastou mais este mês. Fique de olho!`;
 
   return msg;
 }
@@ -467,4 +510,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
