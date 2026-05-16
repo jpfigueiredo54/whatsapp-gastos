@@ -71,10 +71,14 @@ async function getResumoMes() {
   });
 
   const porPessoa = {};
+  const porMetodo = {};
+
   gastosMes.forEach(row => {
     const pessoa = row[6] || "Desconhecido";
+    const metodo = row[4] || "não informado";
     const val = parseFloat((row[1] || "0").replace(",", "."));
     porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+    porMetodo[metodo] = (porMetodo[metodo] || 0) + val;
   });
 
   const budgets = await getBudgets();
@@ -95,6 +99,13 @@ async function getResumoMes() {
       } else {
         msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
       }
+    });
+
+  msg += `\n💳 Por método:\n`;
+  Object.entries(porMetodo)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([metodo, val]) => {
+      msg += `• ${metodo}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
     });
 
   msg += `\n👤 Por pessoa:\n`;
