@@ -343,6 +343,7 @@ async function getComparativo() {
 }
 
 async function getParcelasAbertas() {
+  console.log("🔍 Buscando parcelas...");
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -351,6 +352,8 @@ async function getParcelasAbertas() {
     spreadsheetId,
     range: "Parcelas!A:H",
   });
+
+  console.log("📊 Dados da aba Parcelas:", res.data.values?.length || 0, "linhas");
 
   const rows = res.data.values || [];
   if (rows.length <= 1) return "💳 Nenhuma parcela em aberto.";
