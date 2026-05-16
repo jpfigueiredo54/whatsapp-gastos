@@ -1,6 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, appendParcela, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
+const { appendToSheet, appendParcela, registrarParcelasMes, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -72,6 +72,22 @@ Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro`;
 
 app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
 
+// Rota do GitHub Actions para registrar parcelas mensais
+app.post("/parcelas/registrar", async (req, res) => {
+  const secret = req.headers["x-cron-secret"];
+  if (secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+
+  try {
+    const resultado = await registrarParcelasMes();
+    return res.json({ sucesso: true, registradas: resultado });
+  } catch (err) {
+    console.error("Erro ao registrar parcelas:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/webhook", async (req, res) => {
   const from = req.body.From || "";
   const body = (req.body.Body || "").trim();
@@ -120,7 +136,6 @@ app.post("/webhook", async (req, res) => {
         delete pendentes[from];
         return twimlReply("❌ Gasto cancelado. Mande novamente com as correções.");
       } else {
-        const expense = pendentes[from];
         const preview = expense.parcelado
           ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}`
           : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
