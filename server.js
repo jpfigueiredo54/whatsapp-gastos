@@ -1,6 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
+const { appendToSheet, appendParcela, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -32,7 +32,7 @@ const FRASES = [
   "💡 Anotado. Seu saldo foi embora, mas a memória fica.",
 ];
 
-function frasealeatoria() {
+function fraseAleatoria() {
   return FRASES[Math.floor(Math.random() * FRASES.length)];
 }
 
@@ -41,6 +41,9 @@ const AJUDA = `🤖 Comandos disponíveis:
 💬 *Registrar gasto:*
 Mande uma mensagem normal descrevendo o gasto.
 Ex: "Almoço 45 reais Nubank crédito"
+
+💳 *Registrar parcelado:*
+Ex: "TV 12x de 350 reais Nubank"
 
 📊 */resumo*
 Resumo completo do mês atual por categoria e pessoa.
@@ -93,9 +96,9 @@ app.post("/webhook", async (req, res) => {
       const valorNumerico = parseFloat(expense.valor.replace(",", "."));
       const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
       await appendToSheet(expense, pessoa);
-      let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+      let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor_parcela || expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
       if (alerta) reply += `\n\n${alerta}`;
-      reply += `\n\n${frasealeatoria()}`;
+      reply += `\n\n${fraseAleatoria()}`;
       return twimlReply(reply);
     }
 
@@ -103,18 +106,25 @@ app.post("/webhook", async (req, res) => {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
         delete pendentes[from];
-        const valorNumerico = parseFloat(expense.valor.replace(",", "."));
+        const valorNumerico = parseFloat((expense.valor_parcela || expense.valor).replace(",", "."));
         const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
         await appendToSheet(expense, pessoa);
-        let reply = `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+        if (expense.parcelado) await appendParcela(expense, pessoa);
+        let reply = expense.parcelado
+          ? `✅ Parcelamento registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
+          : `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
         if (alerta) reply += `\n\n${alerta}`;
-        reply += `\n\n${frasealeatoria()}`;
+        reply += `\n\n${fraseAleatoria()}`;
         return twimlReply(reply);
       } else if (body.toLowerCase() === "não" || body.toLowerCase() === "nao") {
         delete pendentes[from];
         return twimlReply("❌ Gasto cancelado. Mande novamente com as correções.");
       } else {
-        return twimlReply(`Responda *sim* para confirmar ou *não* para cancelar.\n\n📋 Gasto pendente:\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`);
+        const expense = pendentes[from];
+        const preview = expense.parcelado
+          ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}`
+          : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+        return twimlReply(`Responda *sim* para confirmar ou *não* para cancelar.\n\n📋 Gasto pendente:\n${preview}`);
       }
     }
 
@@ -136,9 +146,12 @@ app.post("/webhook", async (req, res) => {
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
     pendentes[from] = expense;
-    return twimlReply(
-      `📋 Confirmar gasto?\n\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n\nResponda *sim* para confirmar ou *não* para cancelar.`
-    );
+
+    const preview = expense.parcelado
+      ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`
+      : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+
+    return twimlReply(`📋 Confirmar gasto?\n\n${preview}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
 
   } catch (err) {
     console.error("Erro:", err);
