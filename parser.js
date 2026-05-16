@@ -28,7 +28,7 @@ Regras:
 - "valor_parcela": se parcelado, valor de cada parcela. Senão null
 - "total_parcelas": número total de parcelas se mencionado. Senão null
 - "parcelado": true se mencionar parcelas, vezes, x, prestações. Senão false
-- "categoria": infira uma categoria razoável (Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Outro)
+- "categoria": infira uma categoria razoável (Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Viagem, Outro)
 - "descricao": descrição curta e clara do gasto
 - "metodo_pagamento": infira pelo contexto. Se não mencionado, use "não informado"
 - "cartao": nome do banco/cartão se mencionado (ex: Nubank, Inter, Itaú, C6), senão null
