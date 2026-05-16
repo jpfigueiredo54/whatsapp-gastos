@@ -353,8 +353,6 @@ async function getParcelasAbertas() {
     range: "Parcelas!A:H",
   });
 
-  console.log("📊 Dados da aba Parcelas:", res.data.values?.length || 0, "linhas");
-
   const rows = res.data.values || [];
   if (rows.length <= 1) return "💳 Nenhuma parcela em aberto.";
 
@@ -370,29 +368,27 @@ async function getParcelasAbertas() {
     return acc + parseFloat((row[1] || "0").replace(",", "."));
   }, 0);
 
-  let msg = `💳 Parcelas em aberto\n`;
-  msg += `${"─".repeat(25)}\n`;
-  msg += `💰 Compromisso mensal: R$ ${totalMensal.toFixed(2).replace(".", ",")}\n\n`;
+  const totalRestanteGeral = abertas.reduce((acc, row) => {
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    const total = parseInt(row[6] || "0");
+    const pagas = parseInt(row[7] || "0");
+    return acc + val * (total - pagas);
+  }, 0);
+
+  let msg = `💳 Parcelas em aberto (${abertas.length})\n`;
+  msg += `💰 Mensal: R$ ${totalMensal.toFixed(2).replace(".", ",")}\n`;
+  msg += `📊 Total restante: R$ ${totalRestanteGeral.toFixed(2).replace(".", ",")}\n\n`;
 
   abertas.forEach(row => {
     const descricao = row[0] || "?";
     const valorParcela = parseFloat((row[1] || "0").replace(",", "."));
-    const cartao = row[3] || "";
-    const responsavel = row[5] || "";
     const totalParcelas = parseInt(row[6] || "0");
     const parcelasPagas = parseInt(row[7] || "0");
     const restantes = totalParcelas - parcelasPagas;
-    const totalRestante = valorParcela * restantes;
-
-    msg += `📦 ${descricao}\n`;
-    msg += `   💵 R$ ${valorParcela.toFixed(2).replace(".", ",")} x ${restantes} parcelas restantes\n`;
-    msg += `   💰 Total restante: R$ ${totalRestante.toFixed(2).replace(".", ",")}\n`;
-    if (cartao) msg += `   💳 ${cartao}\n`;
-    if (responsavel) msg += `   👤 ${responsavel}\n`;
-    msg += `\n`;
+    msg += `• ${descricao}: R$ ${valorParcela.toFixed(2).replace(".", ",")} x${restantes}\n`;
   });
 
-  return msg.trim();
+  return msg;
 }
 
 async function getUltimoLancamento(pessoa) {
