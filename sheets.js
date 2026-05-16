@@ -87,4 +87,190 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
   const percentual = (gastoTotal / limite) * 100;
 
   if (percentual >= 100) {
-    return `⚠️ Limite de ${categoria}
+    return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "Cuidar do dinheiro é cuidar da sua liberdade."`;
+  } else if (percentual >= 80) {
+    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)\n\n💡 "O segredo da riqueza está nos pequenos gastos que evitamos."`;
+  }
+  return null;
+}
+
+async function getResumoMes() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  if (rows.length <= 1) return "📊 Nenhum gasto registrado ainda.";
+
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const gastosMes = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+  });
+
+  if (gastosMes.length === 0) return "📊 Nenhum gasto registrado este mês.";
+
+  const totalGeral = gastosMes.reduce((acc, row) => {
+    return acc + parseFloat((row[1] || "0").replace(",", "."));
+  }, 0);
+
+  const porCategoria = {};
+  gastosMes.forEach(row => {
+    const cat = row[2] || "Outro";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porCategoria[cat] = (porCategoria[cat] || 0) + val;
+  });
+
+  const porPessoa = {};
+  gastosMes.forEach(row => {
+    const pessoa = row[6] || "Desconhecido";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+  });
+
+  const budgets = await getBudgets();
+  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  let msg = `📊 Resumo de ${nomeMes}\n`;
+  msg += `💰 Total: R$ ${totalGeral.toFixed(2).replace(".", ",")}\n\n`;
+
+  msg += `📂 Por categoria:\n`;
+  Object.entries(porCategoria)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cat, val]) => {
+      const limite = budgets[cat];
+      if (limite) {
+        const pct = ((val / limite) * 100).toFixed(0);
+        const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+        msg += `${emoji} ${cat}: R$ ${val.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+      } else {
+        msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      }
+    });
+
+  msg += `\n👤 Por pessoa:\n`;
+  Object.entries(porPessoa)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([pessoa, val]) => {
+      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+    });
+
+  msg += `\n💡 "Pequenos gastos fazem grandes buracos." — Benjamin Franklin`;
+
+  return msg;
+}
+
+async function getResumoCategoria(categoria) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const gastosMes = rows.slice(1).filter(row => {
+    if (!row[0] || row[2]?.toLowerCase() !== categoria.toLowerCase()) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+  });
+
+  if (gastosMes.length === 0) return `📂 Nenhum gasto em *${categoria}* este mês.`;
+
+  const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+  const budgets = await getBudgets();
+  const limite = budgets[categoria];
+  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  let msg = `📂 *${categoria}* — ${nomeMes}\n`;
+
+  if (limite) {
+    const pct = ((total / limite) * 100).toFixed(0);
+    const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+    msg += `${emoji} Total: R$ ${total.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+  } else {
+    msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+  }
+
+  msg += `\n📋 Lançamentos:\n`;
+  gastosMes.forEach(row => {
+    msg += `• ${row[0]} — R$ ${parseFloat((row[1] || "0").replace(",", ".")).toFixed(2).replace(".", ",")} — ${row[3] || ""} (${row[6] || ""})\n`;
+  });
+
+  return msg;
+}
+
+async function getUltimoLancamento(pessoa) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  const lancamentos = rows.slice(1);
+
+  for (let i = lancamentos.length - 1; i >= 0; i--) {
+    if (lancamentos[i][6] === pessoa) {
+      return {
+        data: lancamentos[i][0],
+        valor: lancamentos[i][1],
+        categoria: lancamentos[i][2],
+        descricao: lancamentos[i][3],
+        metodo: lancamentos[i][4],
+        cartao: lancamentos[i][5],
+        linha: i + 2,
+      };
+    }
+  }
+  return null;
+}
+
+async function deletarUltimoLancamento(pessoa) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const ultimo = await getUltimoLancamento(pessoa);
+  if (!ultimo) return false;
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId: 0,
+            dimension: "ROWS",
+            startIndex: ultimo.linha - 1,
+            endIndex: ultimo.linha,
+          },
+        },
+      }],
+    },
+  });
+
+  return true;
+}
+
+module.exports = { appendToSheet, getResumoMes, getResumoCategoria, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
