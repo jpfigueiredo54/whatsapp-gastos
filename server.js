@@ -14,6 +14,28 @@ function identificarPessoa(numeroWhatsapp) {
   return PESSOAS[numeroWhatsapp] || numeroWhatsapp.replace("whatsapp:+", "+");
 }
 
+const FRASES = [
+  "💡 Registrado. Seu banco agradece sua contribuição mensal à riqueza deles.",
+  "💡 Anotado. Mais um prego no caixão do seu saldo.",
+  "💡 Parabéns, você acabou de financiar o iate do CEO do Nubank.",
+  "💡 Gasto registrado. Seu eu do futuro já tá chorando, mas ainda não sabe.",
+  "💡 Mais um. A qualquer momento seu cartão vai pedir demissão.",
+  "💡 Anotado com carinho. Seu saldo, nem tanto.",
+  "💡 Registrado. O buraco tá ficando mais fundo, mas pelo menos tá documentado.",
+  "💡 Mais um gasto pro histórico. Seu gerente de banco tá sorrindo.",
+  "💡 Parabéns pela transparência. Sua conta bancária não compartilha do mesmo entusiasmo.",
+  "💡 Registrado. A planilha não julga. Seu extrato, sim.",
+  "💡 Anotado. Se o dinheiro pudesse falar, estaria em silêncio constrangedor agora.",
+  "💡 Mais um. No ritmo certo pra zerar a conta antes do fim do mês.",
+  "💡 Gasto registrado. Pelo menos agora você sabe com o que afundou.",
+  "💡 Parabéns, você contribuiu para o PIB nacional. De nada, Brasil.",
+  "💡 Anotado. Seu saldo foi embora, mas a memória fica.",
+];
+
+function frasealeatoria() {
+  return FRASES[Math.floor(Math.random() * FRASES.length)];
+}
+
 const AJUDA = `🤖 Comandos disponíveis:
 
 💬 *Registrar gasto:*
@@ -73,6 +95,7 @@ app.post("/webhook", async (req, res) => {
       await appendToSheet(expense, pessoa);
       let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
       if (alerta) reply += `\n\n${alerta}`;
+      reply += `\n\n${frasealeatoria()}`;
       return twimlReply(reply);
     }
 
@@ -85,6 +108,7 @@ app.post("/webhook", async (req, res) => {
         await appendToSheet(expense, pessoa);
         let reply = `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
         if (alerta) reply += `\n\n${alerta}`;
+        reply += `\n\n${frasealeatoria()}`;
         return twimlReply(reply);
       } else if (body.toLowerCase() === "não" || body.toLowerCase() === "nao") {
         delete pendentes[from];
