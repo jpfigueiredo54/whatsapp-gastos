@@ -9,6 +9,10 @@ function getAuth() {
   });
 }
 
+function formatarValor(valor) {
+  return valor.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 function calcularScore(porCategoria, budgets) {
   const categoriasBudget = Object.entries(budgets);
   if (categoriasBudget.length === 0) return null;
@@ -85,7 +89,7 @@ async function getResumoMes() {
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   let msg = `📊 Resumo de ${nomeMes}\n`;
-  msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n\n`;
+  msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
 
   msg += `📂 Por categoria:\n`;
   Object.entries(porCategoria)
@@ -95,9 +99,9 @@ async function getResumoMes() {
       if (limite) {
         const pct = ((val / limite) * 100).toFixed(0);
         const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
-        msg += `${emoji} ${cat}: R$ ${val.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+        msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
       } else {
-        msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+        msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
       }
     });
 
@@ -105,14 +109,14 @@ async function getResumoMes() {
   Object.entries(porMetodo)
     .sort((a, b) => b[1] - a[1])
     .forEach(([metodo, val]) => {
-      msg += `• ${metodo}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      msg += `• ${metodo}: R$ ${formatarValor(val)}\n`;
     });
 
   msg += `\n👤 Por pessoa:\n`;
   Object.entries(porPessoa)
     .sort((a, b) => b[1] - a[1])
     .forEach(([pessoa, val]) => {
-      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
     });
 
   return msg;
@@ -152,14 +156,14 @@ async function getResumoCategoria(categoria) {
   if (limite) {
     const pct = ((total / limite) * 100).toFixed(0);
     const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
-    msg += `${emoji} Total: R$ ${total.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+    msg += `${emoji} Total: R$ ${formatarValor(total)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
   } else {
-    msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+    msg += `💰 Total: R$ ${formatarValor(total)}\n`;
   }
 
   msg += `\n📋 Lançamentos:\n`;
   gastosMes.forEach(row => {
-    msg += `• ${row[0]} — R$ ${parseFloat((row[1] || "0").replace(",", ".")).toFixed(2).replace(".", ",")} — ${row[3] || ""} (${row[6] || ""})\n`;
+    msg += `• ${row[0]} — R$ ${formatarValor(parseFloat((row[1] || "0").replace(",", ".")))} — ${row[3] || ""} (${row[6] || ""})\n`;
   });
 
   return msg;
@@ -229,20 +233,20 @@ async function getRelatorioSemana() {
 
   let msg = `📅 Relatório semanal\n`;
   msg += `🗓️ ${dataInicioStr} a ${dataFimStr}\n`;
-  msg += `💰 Total: R$ ${total.toFixed(2).replace(".", ",")}\n\n`;
+  msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
 
   msg += `📂 Por categoria:\n`;
   Object.entries(porCategoria)
     .sort((a, b) => b[1] - a[1])
     .forEach(([cat, val]) => {
-      msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
     });
 
   msg += `\n👤 Por pessoa:\n`;
   Object.entries(porPessoa)
     .sort((a, b) => b[1] - a[1])
     .forEach(([pessoa, val]) => {
-      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
     });
 
   return msg;
@@ -303,7 +307,7 @@ async function getFechamentoMes() {
 
   let msg = `🏁 Fechamento de ${nomeMes}\n`;
   msg += `${"─".repeat(25)}\n`;
-  msg += `💰 Total gasto: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+  msg += `💰 Total gasto: R$ ${formatarValor(total)}\n`;
 
   if (score !== null) {
     msg += `⭐ Score financeiro: ${score}/10 — ${emojiScore(score)}\n`;
@@ -312,7 +316,7 @@ async function getFechamentoMes() {
   if (totalBudget > 0) {
     const pctGeral = ((total / totalBudget) * 100).toFixed(0);
     const emojiGeral = total > totalBudget ? "🔴" : total / totalBudget >= 0.8 ? "🟡" : "🟢";
-    msg += `${emojiGeral} Budget total: R$ ${totalBudget.toFixed(2).replace(".", ",")} (${pctGeral}% utilizado)\n`;
+    msg += `${emojiGeral} Budget total: R$ ${formatarValor(totalBudget)} (${pctGeral}% utilizado)\n`;
   }
 
   msg += `\n📂 Por categoria:\n`;
@@ -323,9 +327,9 @@ async function getFechamentoMes() {
       if (limite) {
         const pct = ((val / limite) * 100).toFixed(0);
         const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
-        msg += `${emoji} ${cat}: R$ ${val.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+        msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
       } else {
-        msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+        msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
       }
     });
 
@@ -334,12 +338,12 @@ async function getFechamentoMes() {
     .sort((a, b) => b[1] - a[1])
     .forEach(([pessoa, val]) => {
       const pct = ((val / total) * 100).toFixed(0);
-      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")} (${pct}% do total)\n`;
+      msg += `• ${pessoa}: R$ ${formatarValor(val)} (${pct}% do total)\n`;
     });
 
   msg += `\n📌 Destaques:\n`;
-  msg += `• Maior gasto: ${maiorGasto[0]} (R$ ${maiorGasto[1].toFixed(2).replace(".", ",")})\n`;
-  msg += `• Quem mais gastou: ${maiorGastante[0]} (R$ ${maiorGastante[1].toFixed(2).replace(".", ",")})\n`;
+  msg += `• Maior gasto: ${maiorGasto[0]} (R$ ${formatarValor(maiorGasto[1])})\n`;
+  msg += `• Quem mais gastou: ${maiorGastante[0]} (R$ ${formatarValor(maiorGastante[1])})\n`;
 
   if (categoriasEstouradas.length > 0) msg += `• Categorias estouradas: ${categoriasEstouradas.join(", ")}\n`;
   if (categoriasDentro.length > 0) msg += `• Dentro do budget: ${categoriasDentro.join(", ")}\n`;
@@ -371,10 +375,10 @@ async function getComparativo() {
 
   let msg = `📊 Comparativo: ${nomeAnterior} vs ${nomeAtual}\n`;
   msg += `${"─".repeat(25)}\n`;
-  msg += `${emojiTotal} Total: R$ ${anterior.total.toFixed(2).replace(".", ",")} → R$ ${atual.total.toFixed(2).replace(".", ",")}\n`;
+  msg += `${emojiTotal} Total: R$ ${formatarValor(anterior.total)} → R$ ${formatarValor(atual.total)}\n`;
 
   const sinal = diffTotal >= 0 ? "+" : "";
-  msg += `   ${sinal}R$ ${diffTotal.toFixed(2).replace(".", ",")} (${sinal}${diffPct}%)\n\n`;
+  msg += `   ${sinal}R$ ${formatarValor(Math.abs(diffTotal))} (${sinal}${diffPct}%)\n\n`;
 
   msg += `📂 Por categoria:\n`;
   const todasCategorias = new Set([...Object.keys(atual.porCategoria), ...Object.keys(anterior.porCategoria)]);
@@ -385,8 +389,8 @@ async function getComparativo() {
     const diff = valAtual - valAnterior;
     const emoji = diff > 0 ? "📈" : diff < 0 ? "📉" : "➡️";
     const sinalCat = diff >= 0 ? "+" : "";
-    msg += `${emoji} ${cat}: R$ ${valAnterior.toFixed(2).replace(".", ",")} → R$ ${valAtual.toFixed(2).replace(".", ",")}\n`;
-    msg += `   (${sinalCat}R$ ${diff.toFixed(2).replace(".", ",")})\n`;
+    msg += `${emoji} ${cat}: R$ ${formatarValor(valAnterior)} → R$ ${formatarValor(valAtual)}\n`;
+    msg += `   (${sinalCat}R$ ${formatarValor(Math.abs(diff))})\n`;
   });
 
   msg += diffTotal < 0 ? `\n✅ Parabéns! Você gastou menos este mês.` : `\n⚠️ Você gastou mais este mês. Fique de olho!`;
@@ -439,18 +443,18 @@ async function getParcelasAbertas() {
   });
 
   let msg = `💳 Parcelas em aberto (${abertas.length})\n`;
-  msg += `📊 Total restante: R$ ${totalRestanteGeral.toFixed(2).replace(".", ",")}\n\n`;
+  msg += `📊 Total restante: R$ ${formatarValor(totalRestanteGeral)}\n\n`;
 
   msg += `💳 Por cartão (mensal):\n`;
   Object.entries(porCartao)
     .sort((a, b) => b[1] - a[1])
     .forEach(([cartao, val]) => {
-      msg += `• ${cartao}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      msg += `• ${cartao}: R$ ${formatarValor(val)}\n`;
     });
 
   msg += `\n📅 Projeção:\n`;
   projecao.forEach(({ nomeMes, total }) => {
-    msg += `• ${nomeMes}: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+    msg += `• ${nomeMes}: R$ ${formatarValor(total)}\n`;
   });
 
   msg += `\n📋 Parcelas:\n`;
@@ -459,7 +463,7 @@ async function getParcelasAbertas() {
     const valorParcela = parseFloat((row[1] || "0").replace(",", "."));
     const cartao = row[3] || "";
     const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
-    msg += `• ${descricao} (${cartao}): R$ ${valorParcela.toFixed(2).replace(".", ",")} x${restantes}\n`;
+    msg += `• ${descricao} (${cartao}): R$ ${formatarValor(valorParcela)} x${restantes}\n`;
   });
 
   return msg;
