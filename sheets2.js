@@ -9,6 +9,41 @@ function getAuth() {
   });
 }
 
+function calcularScore(porCategoria, budgets) {
+  const categoriasBudget = Object.entries(budgets);
+  if (categoriasBudget.length === 0) return null;
+
+  let totalPontos = 0;
+  let count = 0;
+
+  categoriasBudget.forEach(([cat, limite]) => {
+    const gasto = porCategoria[cat] || 0;
+    const pct = gasto / limite;
+    let nota;
+
+    if (pct <= 0) nota = 10;
+    else if (pct <= 0.5) nota = 10 - (pct / 0.5) * 2;
+    else if (pct <= 0.8) nota = 8 - ((pct - 0.5) / 0.3) * 1;
+    else if (pct <= 1.0) nota = 7 - ((pct - 0.8) / 0.2) * 2;
+    else if (pct <= 1.5) nota = 5 - ((pct - 1.0) / 0.5) * 5;
+    else nota = 0;
+
+    totalPontos += Math.max(0, nota);
+    count++;
+  });
+
+  return (totalPontos / count).toFixed(1);
+}
+
+function emojiScore(score) {
+  const s = parseFloat(score);
+  if (s >= 9) return "🏆 Excelente";
+  if (s >= 7) return "🟢 Bom";
+  if (s >= 5) return "🟡 Regular";
+  if (s >= 3) return "🟠 Atenção";
+  return "🔴 Crítico";
+}
+
 async function getResumoMes() {
   const agora = new Date();
   const { porCategoria, total } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
@@ -237,6 +272,7 @@ async function getFechamentoMes() {
 
   const budgets = await getBudgets();
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const score = calcularScore(porCategoria, budgets);
 
   let totalBudget = 0;
   let categoriasEstouradas = [];
@@ -257,6 +293,10 @@ async function getFechamentoMes() {
   let msg = `🏁 Fechamento de ${nomeMes}\n`;
   msg += `${"─".repeat(25)}\n`;
   msg += `💰 Total gasto: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+
+  if (score !== null) {
+    msg += `⭐ Score financeiro: ${score}/10 — ${emojiScore(score)}\n`;
+  }
 
   if (totalBudget > 0) {
     const pctGeral = ((total / totalBudget) * 100).toFixed(0);
@@ -363,7 +403,6 @@ async function getParcelasAbertas() {
 
   if (abertas.length === 0) return "✅ Nenhuma parcela em aberto. Parabéns!";
 
-  // Projeção dos próximos 3 meses
   const agora = new Date();
   const projecao = [0, 1, 2, 3].map(offset => {
     const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
@@ -381,7 +420,6 @@ async function getParcelasAbertas() {
     return acc + val * restantes;
   }, 0);
 
-  // Agrupa por cartão
   const porCartao = {};
   abertas.forEach(row => {
     const cartao = row[3] || "Outros";
