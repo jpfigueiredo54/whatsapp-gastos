@@ -302,6 +302,115 @@ async function getRelatorioSemana() {
   return msg;
 }
 
+async function getFechamentoMes() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const rows = res.data.values || [];
+  if (rows.length <= 1) return "🏁 Nenhum gasto registrado ainda.";
+
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const gastosMes = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+  });
+
+  if (gastosMes.length === 0) return "🏁 Nenhum gasto registrado este mês.";
+
+  const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+
+  const porCategoria = {};
+  gastosMes.forEach(row => {
+    const cat = row[2] || "Outro";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porCategoria[cat] = (porCategoria[cat] || 0) + val;
+  });
+
+  const porPessoa = {};
+  gastosMes.forEach(row => {
+    const pessoa = row[6] || "Desconhecido";
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+  });
+
+  const budgets = await getBudgets();
+  const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  let totalBudget = 0;
+  let categoriasEstouradas = [];
+  let categoriasDentro = [];
+
+  Object.entries(porCategoria).forEach(([cat, val]) => {
+    const limite = budgets[cat];
+    if (limite) {
+      totalBudget += limite;
+      if (val > limite) categoriasEstouradas.push(cat);
+      else categoriasDentro.push(cat);
+    }
+  });
+
+  const maiorGasto = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
+  const maiorGastante = Object.entries(porPessoa).sort((a, b) => b[1] - a[1])[0];
+
+  let msg = `🏁 Fechamento de ${nomeMes}\n`;
+  msg += `${"─".repeat(25)}\n`;
+  msg += `💰 Total gasto: R$ ${total.toFixed(2).replace(".", ",")}\n`;
+
+  if (totalBudget > 0) {
+    const pctGeral = ((total / totalBudget) * 100).toFixed(0);
+    const emojiGeral = total > totalBudget ? "🔴" : total / totalBudget >= 0.8 ? "🟡" : "🟢";
+    msg += `${emojiGeral} Budget total: R$ ${totalBudget.toFixed(2).replace(".", ",")} (${pctGeral}% utilizado)\n`;
+  }
+
+  msg += `\n📂 Por categoria:\n`;
+  Object.entries(porCategoria)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cat, val]) => {
+      const limite = budgets[cat];
+      if (limite) {
+        const pct = ((val / limite) * 100).toFixed(0);
+        const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+        msg += `${emoji} ${cat}: R$ ${val.toFixed(2).replace(".", ",")} / R$ ${limite.toFixed(2).replace(".", ",")} (${pct}%)\n`;
+      } else {
+        msg += `• ${cat}: R$ ${val.toFixed(2).replace(".", ",")}\n`;
+      }
+    });
+
+  msg += `\n👤 Por pessoa:\n`;
+  Object.entries(porPessoa)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([pessoa, val]) => {
+      const pct = ((val / total) * 100).toFixed(0);
+      msg += `• ${pessoa}: R$ ${val.toFixed(2).replace(".", ",")} (${pct}% do total)\n`;
+    });
+
+  msg += `\n📌 Destaques:\n`;
+  msg += `• Maior gasto: ${maiorGasto[0]} (R$ ${maiorGasto[1].toFixed(2).replace(".", ",")})\n`;
+  msg += `• Quem mais gastou: ${maiorGastante[0]} (R$ ${maiorGastante[1].toFixed(2).replace(".", ",")})\n`;
+
+  if (categoriasEstouradas.length > 0) {
+    msg += `• Categorias estouradas: ${categoriasEstouradas.join(", ")}\n`;
+  }
+  if (categoriasDentro.length > 0) {
+    msg += `• Dentro do budget: ${categoriasDentro.join(", ")}\n`;
+  }
+
+  msg += `\n💡 "Quem controla seus gastos, controla seu futuro."`;
+
+  return msg;
+}
+
 async function getUltimoLancamento(pessoa) {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -358,4 +467,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { appendToSheet, getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, verificarAlertaBudget, getUltimoLancamento, deletarUltimoLancamento };
