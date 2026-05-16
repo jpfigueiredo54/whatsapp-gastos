@@ -33,10 +33,10 @@ app.post("/webhook", async (req, res) => {
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'");
 
-    await appendToSheet(expense, pessoa);
-
     const valorNumerico = parseFloat(expense.valor.replace(",", "."));
     const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
+
+    await appendToSheet(expense, pessoa);
 
     let reply = `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
 
