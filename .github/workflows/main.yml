@@ -1,0 +1,17 @@
+name: Registrar Parcelas Mensais
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'  # Todo dia 1º às 9h
+  workflow_dispatch:       # Permite rodar manualmente
+
+jobs:
+  registrar-parcelas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Registrar parcelas do mês
+        run: |
+          curl -X POST https://whatsapp-gastos-nbya.onrender.com/parcelas/registrar \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d '{}'
