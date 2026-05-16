@@ -1,7 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-let appendToSheet;
-setTimeout(() => { appendToSheet = require("./sheets").appendToSheet; }, 0);
+const { appendToSheet, getResumoMes } = require("./sheets");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -26,6 +25,11 @@ app.post("/webhook", async (req, res) => {
   if (!body) return twimlReply("Não entendi. Tente: 'Almoço 45 reais no cartão Nubank débito'");
 
   try {
+    if (body.toLowerCase() === "/resumo") {
+      const resumo = await getResumoMes();
+      return twimlReply(resumo);
+    }
+
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'");
 
