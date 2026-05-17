@@ -70,13 +70,23 @@ function calcularCicloFatura(diaFechamento) {
 
   const inicio = new Date(inicioAno, inicioMes, diaFechamento);
   const fim = new Date(fimAno, fimMes, diaFechamento - 1);
-  const diasRestantes = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+  const totalDias = Math.ceil((fim - inicio) / (1000 * 60 * 60 * 24));
+  const diasDecorridos = Math.ceil((new Date() - inicio) / (1000 * 60 * 60 * 24));
+  const diasRestantes = Math.ceil((fim - new Date()) / (1000 * 60 * 60 * 24));
+  const pctCiclo = Math.min(100, Math.round((diasDecorridos / totalDias) * 100));
 
-  return { inicio, fim, diasRestantes };
+  return { inicio, fim, totalDias, diasDecorridos, diasRestantes, pctCiclo };
 }
 
 function formatarData(d) {
   return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+}
+
+function alertaRitmo(pctGasto, pctCiclo) {
+  const diff = pctGasto - pctCiclo;
+  if (pctGasto >= 100) return `🔴 Ritmo de consumo elevado. Há risco de atingir o limite antes do fechamento da fatura.`;
+  if (diff >= 20) return `🟡 Consumo acima do esperado para este momento do ciclo. Recomenda-se cautela nos próximos gastos.`;
+  return `✅ Consumo dentro do esperado para o período.`;
 }
 
 async function getFaturas() {
@@ -86,7 +96,7 @@ async function getFaturas() {
 
   const resCartoes = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Cartões!A:C",
+    range: "Cartões!A:D",
   });
 
   const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
@@ -109,7 +119,8 @@ async function getFaturas() {
   for (const cartao of cartoes) {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
-    const { inicio, fim, diasRestantes } = calcularCicloFatura(diaFechamento);
+    const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
+    const { inicio, fim, diasDecorridos, diasRestantes, totalDias, pctCiclo } = calcularCicloFatura(diaFechamento);
 
     const gastosCartao = gastos.filter(row => {
       if (!row[0] || !row[5]) return false;
@@ -129,10 +140,20 @@ async function getFaturas() {
     const total = aVista + parcelas;
 
     msg += `💳 *${nomeCartao}*\n`;
-    msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} (${diasRestantes} dias)\n`;
+    msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} — dia ${diasDecorridos}/${totalDias}\n`;
     msg += `🛒 À vista: R$ ${formatarValor(aVista)}\n`;
     msg += `🔄 Parcelas: R$ ${formatarValor(parcelas)}\n`;
-    msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
+
+    if (limiteCartao) {
+      const pctGasto = Math.round((total / limiteCartao) * 100);
+      const emojiLimite = pctGasto >= 100 ? "🔴" : pctGasto >= 80 ? "🟡" : "🟢";
+      msg += `💰 Total: R$ ${formatarValor(total)} / R$ ${formatarValor(limiteCartao)} (${pctGasto}%) ${emojiLimite}\n`;
+      msg += `${alertaRitmo(pctGasto, pctCiclo)}\n`;
+    } else {
+      msg += `💰 Total: R$ ${formatarValor(total)}\n`;
+    }
+
+    msg += `\n`;
   }
 
   return msg.trim();
