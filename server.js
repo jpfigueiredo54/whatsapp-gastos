@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const { parseExpense } = require("./parser");
 const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -89,45 +89,43 @@ app.get("/dashboard", (req, res) => {
 });
 
 app.get("/api/resumo", async (req, res) => {
-  try {
-    const data = await getApiResumo();
-    res.json(data);
-  } catch (err) {
-    console.error("Erro /api/resumo:", err);
-    res.status(500).json({ error: err.message });
-  }
+  try { res.json(await getApiResumo()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get("/api/faturas", async (req, res) => {
-  try {
-    const data = await getApiFaturas();
-    res.json(data);
-  } catch (err) {
-    console.error("Erro /api/faturas:", err);
-    res.status(500).json({ error: err.message });
-  }
+  try { res.json(await getApiFaturas()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get("/api/parcelas", async (req, res) => {
+  try { res.json(await getApiParcelas()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/transacoes", async (req, res) => {
   try {
-    const data = await getApiParcelas();
-    res.json(data);
-  } catch (err) {
-    console.error("Erro /api/parcelas:", err);
-    res.status(500).json({ error: err.message });
+    const { mes, ano, cartao, pessoa, tipo } = req.query;
+    res.json(await getApiTransacoes(mes, ano, cartao, pessoa, tipo));
   }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/relatorio", async (req, res) => {
+  try {
+    const { meses } = req.query;
+    res.json(await getApiRelatorio(meses || 6));
+  }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post("/parcelas/registrar", async (req, res) => {
   const secret = req.headers["x-cron-secret"];
-  if (secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: "Não autorizado" });
-  }
+  if (secret !== process.env.CRON_SECRET) return res.status(401).json({ error: "Não autorizado" });
   try {
     const resultado = await registrarParcelasMes();
     return res.json({ sucesso: true, registradas: resultado });
   } catch (err) {
-    console.error("Erro ao registrar parcelas:", err);
     return res.status(500).json({ error: err.message });
   }
 });
@@ -143,32 +141,25 @@ app.post("/webhook", async (req, res) => {
   if (!body) return twimlReply(AJUDA);
 
   try {
-
     if (editando[from]) {
-      if (body.toLowerCase() === "cancelar") {
-        delete editando[from];
-        return twimlReply("❌ Edição cancelada.");
-      }
+      if (body.toLowerCase() === "cancelar") { delete editando[from]; return twimlReply("❌ Edição cancelada."); }
       const expense = await parseExpense(body);
       if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente novamente ou mande *cancelar* para sair.");
       await deletarUltimoLancamento(pessoa);
       delete editando[from];
-      const valorNumerico = parseFloat(expense.valor.replace(",", "."));
-      const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
+      const alerta = await verificarAlertaBudget(expense.categoria, parseFloat(expense.valor.replace(",", ".")));
       await appendToSheet(expense, pessoa);
       const tipo = expense.parcelado ? "Parcelado" : "À vista";
       let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor_parcela || expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`;
       if (alerta) reply += `\n\n${alerta}`;
-      reply += `\n\n${fraseAleatoria()}`;
-      return twimlReply(reply);
+      return twimlReply(reply + `\n\n${fraseAleatoria()}`);
     }
 
     if (pendentes[from]) {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
         delete pendentes[from];
-        const valorNumerico = parseFloat((expense.valor_parcela || expense.valor).replace(",", "."));
-        const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
+        const alerta = await verificarAlertaBudget(expense.categoria, parseFloat((expense.valor_parcela || expense.valor).replace(",", ".")));
         await appendToSheet(expense, pessoa);
         if (expense.parcelado) await appendParcela(expense, pessoa);
         const tipo = expense.parcelado ? "Parcelado" : "À vista";
@@ -176,8 +167,7 @@ app.post("/webhook", async (req, res) => {
           ? `✅ Parcelamento registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n📌 Parcelado\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
           : `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 À vista`;
         if (alerta) reply += `\n\n${alerta}`;
-        reply += `\n\n${fraseAleatoria()}`;
-        return twimlReply(reply);
+        return twimlReply(reply + `\n\n${fraseAleatoria()}`);
       } else if (body.toLowerCase() === "não" || body.toLowerCase() === "nao") {
         delete pendentes[from];
         return twimlReply("❌ Gasto cancelado. Mande novamente com as correções.");
@@ -222,12 +212,10 @@ app.post("/webhook", async (req, res) => {
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
     pendentes[from] = expense;
-
     const tipo = expense.parcelado ? "Parcelado" : "À vista";
     const preview = expense.parcelado
       ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`
       : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`;
-
     return twimlReply(`📋 Confirmar gasto?\n\n${preview}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
 
   } catch (err) {
