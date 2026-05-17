@@ -48,6 +48,113 @@ function emojiScore(score) {
   return "🔴 Crítico";
 }
 
+function calcularCicloFatura(diaFechamento) {
+  const hoje = new Date();
+  const diaHoje = hoje.getDate();
+  const mesHoje = hoje.getMonth();
+  const anoHoje = hoje.getFullYear();
+
+  let inicioMes, inicioAno, fimMes, fimAno;
+
+  if (diaHoje >= diaFechamento) {
+    // Estamos depois do fechamento — ciclo atual vai até o próximo mês
+    inicioMes = mesHoje;
+    inicioAno = anoHoje;
+    fimMes = mesHoje === 11 ? 0 : mesHoje + 1;
+    fimAno = mesHoje === 11 ? anoHoje + 1 : anoHoje;
+  } else {
+    // Ainda não fechou — ciclo começou no mês passado
+    inicioMes = mesHoje === 0 ? 11 : mesHoje - 1;
+    inicioAno = mesHoje === 0 ? anoHoje - 1 : anoHoje;
+    fimMes = mesHoje;
+    fimAno = anoHoje;
+  }
+
+  const inicio = new Date(inicioAno, inicioMes, diaFechamento);
+  const fim = new Date(fimAno, fimMes, diaFechamento - 1);
+  const diasRestantes = Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24));
+
+  return { inicio, fim, diasRestantes };
+}
+
+async function getFaturas() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  // Lê aba Cartões
+  const resCartoes = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Cartões!A:C",
+  });
+
+  const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
+
+  // Lê aba Gastos
+  const resGastos = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Gastos!A:G",
+  });
+
+  const gastos = (resGastos.data.values || []).slice(1);
+
+  // Lê aba Parcelas
+  const resParcelas = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Parcelas!A:H",
+  });
+
+  const parcelas = (resParcelas.data.values || []).slice(1);
+
+  const parsearData = (str) => {
+    const p = str.split("/");
+    if (p.length < 3) return null;
+    return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+  };
+
+  let msg = `💳 Faturas em aberto\n${"─".repeat(25)}\n\n`;
+
+  for (const cartao of cartoes) {
+    const nomeCartao = cartao[0];
+    const diaFechamento = parseInt(cartao[2]);
+    const { inicio, fim, diasRestantes } = calcularCicloFatura(diaFechamento);
+
+    const dataFimFormatada = fim.toLocaleDateString("pt-BR", { day: "2d", month: "2d" }).replace(/(\d+)\/(\d+)\/\d+/, "$1/$2");
+    const fechaEm = fim.toLocaleDateString("pt-BR", { day: "numeric", month: "numeric" });
+
+    // Soma gastos do período para esse cartão
+    const totalGastos = gastos
+      .filter(row => {
+        if (!row[0] || !row[5]) return false;
+        const d = parsearData(row[0]);
+        if (!d) return false;
+        const cartaoGasto = (row[5] || "").toLowerCase();
+        return cartaoGasto.includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
+      })
+      .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+
+    // Soma parcelas abertas desse cartão
+    const totalParcelas = parcelas
+      .filter(row => {
+        const cartaoParcela = (row[3] || "").toLowerCase();
+        const totalP = parseInt(row[6] || "0");
+        const pagas = parseInt(row[7] || "0");
+        return cartaoParcela.includes(nomeCartao.toLowerCase()) && pagas < totalP;
+      })
+      .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+
+    const totalFatura = totalGastos + totalParcelas;
+
+    msg += `💳 *${nomeCartao}*\n`;
+    msg += `📅 Fecha em ${fechaEm} (${diasRestantes} dias)\n`;
+    msg += `🛒 Gastos: R$ ${formatarValor(totalGastos)}\n`;
+    msg += `🔄 Parcelas: R$ ${formatarValor(totalParcelas)}\n`;
+    msg += `💰 Total fatura: R$ ${formatarValor(totalFatura)}\n\n`;
+  }
+
+  return msg.trim();
+}
+
 async function getResumoMes() {
   const agora = new Date();
   const { porCategoria, total } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
@@ -535,4 +642,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento };
