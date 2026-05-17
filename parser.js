@@ -1,4 +1,5 @@
 const Anthropic = require("@anthropic-ai/sdk");
+const { getCategorias } = require("./sheets");
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -7,7 +8,11 @@ const today = () => {
   return d.toLocaleDateString("pt-BR");
 };
 
-const SYSTEM_PROMPT = `Você é um assistente que extrai informações de gastos a partir de mensagens em português.
+async function parseExpense(message) {
+  const categorias = await getCategorias();
+  const listaCategoria = categorias.join(", ");
+
+  const SYSTEM_PROMPT = `Você é um assistente que extrai informações de gastos a partir de mensagens em português.
 
 Retorne APENAS um JSON válido com exatamente estas chaves:
 {
@@ -28,7 +33,7 @@ Regras:
 - "valor_parcela": se parcelado, valor de cada parcela. Senão null
 - "total_parcelas": número total de parcelas se mencionado. Senão null
 - "parcelado": true se mencionar parcelas, vezes, x, prestações. Senão false
-- "categoria": infira uma categoria razoável (Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Viagem, Outro)
+- "categoria": infira uma categoria razoável dentre estas opções: ${listaCategoria}
 - "descricao": descrição curta e clara do gasto
 - "metodo_pagamento": infira pelo contexto. Se não mencionado, use "não informado"
 - "cartao": nome do banco/cartão se mencionado (ex: Nubank, Inter, Itaú, C6), senão null
@@ -40,7 +45,6 @@ Exemplos de parcelamento:
 Se a mensagem não parecer um gasto, retorne null.
 Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
 
-async function parseExpense(message) {
   const response = await client.messages.create({
     model: "claude-sonnet-4-5",
     max_tokens: 300,
