@@ -93,7 +93,7 @@ async function getFaturas() {
 
   const resGastos = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const gastos = (resGastos.data.values || []).slice(1);
@@ -119,11 +119,11 @@ async function getFaturas() {
     });
 
     const aVista = gastosCartao
-      .filter(row => !(row[3] || "").toLowerCase().includes("parcela"))
+      .filter(row => (row[7] || "").toLowerCase() !== "parcelado")
       .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
 
     const parcelas = gastosCartao
-      .filter(row => (row[3] || "").toLowerCase().includes("parcela"))
+      .filter(row => (row[7] || "").toLowerCase() === "parcelado")
       .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
 
     const total = aVista + parcelas;
@@ -150,7 +150,7 @@ async function getResumoMes() {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
@@ -229,7 +229,7 @@ async function getResumoCategoria(categoria) {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
@@ -276,7 +276,7 @@ async function getRelatorioSemana() {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
@@ -364,7 +364,7 @@ async function getFechamentoMes() {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
@@ -576,7 +576,7 @@ async function getUltimoLancamento(pessoa) {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
