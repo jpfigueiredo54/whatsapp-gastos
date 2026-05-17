@@ -94,18 +94,10 @@ async function getFaturas() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const resCartoes = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Cartões!A:D",
-  });
-
+  const resCartoes = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Cartões!A:D" });
   const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
 
-  const resGastos = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const resGastos = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const gastos = (resGastos.data.values || []).slice(1);
 
   const parsearData = (str) => {
@@ -129,14 +121,8 @@ async function getFaturas() {
       return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
     });
 
-    const aVista = gastosCartao
-      .filter(row => (row[7] || "").toLowerCase() !== "parcelado")
-      .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
-
-    const parcelas = gastosCartao
-      .filter(row => (row[7] || "").toLowerCase() === "parcelado")
-      .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
-
+    const aVista = gastosCartao.filter(row => (row[7] || "").toLowerCase() !== "parcelado").reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
+    const parcelas = gastosCartao.filter(row => (row[7] || "").toLowerCase() === "parcelado").reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
     const total = aVista + parcelas;
 
     msg += `💳 *${nomeCartao}*\n`;
@@ -159,6 +145,129 @@ async function getFaturas() {
   return msg.trim();
 }
 
+async function getApiResumo() {
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+  const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
+  const anoAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
+
+  const { porCategoria, total } = await getGastosPorMes(mesAtual, anoAtual);
+  const { total: totalAnterior } = await getGastosPorMes(mesAnterior, anoAnterior);
+  const budgets = await getBudgets();
+  const score = calcularScore(porCategoria, budgets);
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
+  const rows = res.data.values || [];
+
+  const gastosMes = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+  });
+
+  const porPessoa = {};
+  gastosMes.forEach(row => {
+    const pessoa = row[6] || "Desconhecido";
+    const val = parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", "."));
+    if (!isNaN(val)) porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+  });
+
+  // Evolução dos últimos 6 meses
+  const evolucao = [];
+  for (let i = 5; i >= 0; i--) {
+    const m = mesAtual - i < 0 ? mesAtual - i + 12 : mesAtual - i;
+    const a = mesAtual - i < 0 ? anoAtual - 1 : anoAtual;
+    const { total: t } = await getGastosPorMes(m, a);
+    const nomeMes = new Date(a, m, 1).toLocaleDateString("pt-BR", { month: "short" });
+    evolucao.push({ mes: nomeMes, total: t });
+  }
+
+  return { total, totalMesAnterior: totalAnterior, porCategoria, porPessoa, budgets, score, evolucao };
+}
+
+async function getApiParcelas() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Parcelas!A:H" });
+  const rows = res.data.values || [];
+
+  const abertas = rows.slice(1).filter(row => {
+    const totalParcelas = parseInt(row[6] || "0");
+    const parcelasPagas = parseInt(row[7] || "0");
+    return parcelasPagas < totalParcelas;
+  });
+
+  const totalMensal = abertas.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+  const totalRestante = abertas.reduce((acc, row) => {
+    const val = parseFloat((row[1] || "0").replace(",", "."));
+    const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
+    return acc + val * restantes;
+  }, 0);
+
+  const agora = new Date();
+  const projecao = [0, 1, 2, 3].map(offset => {
+    const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
+    const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
+    const total = abertas.reduce((acc, row) => {
+      const restantes = parseInt(row[6] || "0") - parseInt(row[7] || "0");
+      return restantes > offset ? acc + parseFloat((row[1] || "0").replace(",", ".")) : acc;
+    }, 0);
+    return { nomeMes, total };
+  });
+
+  return { quantidade: abertas.length, totalMensal, totalRestante, projecao };
+}
+
+async function getApiFaturas() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const resCartoes = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Cartões!A:D" });
+  const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
+
+  const resGastos = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
+  const gastos = (resGastos.data.values || []).slice(1);
+
+  const parsearData = (str) => {
+    const p = str.split("/");
+    if (p.length < 3) return null;
+    return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+  };
+
+  const result = [];
+
+  for (const cartao of cartoes) {
+    const nomeCartao = cartao[0];
+    const diaFechamento = parseInt(cartao[2]);
+    const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
+    const { inicio, fim, diasRestantes, pctCiclo } = calcularCicloFatura(diaFechamento);
+
+    const gastosCartao = gastos.filter(row => {
+      if (!row[0] || !row[5]) return false;
+      const d = parsearData(row[0]);
+      if (!d) return false;
+      return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
+    });
+
+    const aVista = gastosCartao.filter(row => (row[7] || "").toLowerCase() !== "parcelado").reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
+    const parcelas = gastosCartao.filter(row => (row[7] || "").toLowerCase() === "parcelado").reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
+    const total = aVista + parcelas;
+
+    result.push({ nome: nomeCartao, total, aVista, parcelas, limite: limiteCartao, diasRestantes, pctCiclo });
+  }
+
+  return { cartoes: result };
+}
+
 async function getResumoMes() {
   const agora = new Date();
   const { porCategoria, total } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
@@ -169,11 +278,7 @@ async function getResumoMes() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   const mesAtual = agora.getMonth();
   const anoAtual = agora.getFullYear();
@@ -193,7 +298,8 @@ async function getResumoMes() {
     const pessoa = row[6] || "Desconhecido";
     const metodo = row[4] || "não informado";
     const cartao = row[5] || "não informado";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
+    const val = parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", "."));
+    if (isNaN(val)) return;
     porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
     porMetodo[metodo] = (porMetodo[metodo] || 0) + val;
     porCartao[cartao] = (porCartao[cartao] || 0) + val;
@@ -206,39 +312,31 @@ async function getResumoMes() {
   msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
 
   msg += `📂 Por categoria:\n`;
-  Object.entries(porCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cat, val]) => {
-      const limite = budgets[cat];
-      if (limite) {
-        const pct = ((val / limite) * 100).toFixed(0);
-        const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
-        msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
-      } else {
-        msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
-      }
-    });
+  Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).forEach(([cat, val]) => {
+    const limite = budgets[cat];
+    if (limite) {
+      const pct = ((val / limite) * 100).toFixed(0);
+      const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+      msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
+    } else {
+      msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
+    }
+  });
 
   msg += `\n💳 Por método:\n`;
-  Object.entries(porMetodo)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([metodo, val]) => {
-      msg += `• ${metodo}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porMetodo).sort((a, b) => b[1] - a[1]).forEach(([metodo, val]) => {
+    msg += `• ${metodo}: R$ ${formatarValor(val)}\n`;
+  });
 
   msg += `\n💳 Por cartão:\n`;
-  Object.entries(porCartao)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cartao, val]) => {
-      msg += `• ${cartao}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porCartao).sort((a, b) => b[1] - a[1]).forEach(([cartao, val]) => {
+    msg += `• ${cartao}: R$ ${formatarValor(val)}\n`;
+  });
 
   msg += `\n👤 Por pessoa:\n`;
-  Object.entries(porPessoa)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([pessoa, val]) => {
-      msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porPessoa).sort((a, b) => b[1] - a[1]).forEach(([pessoa, val]) => {
+    msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
+  });
 
   return msg;
 }
@@ -248,11 +346,7 @@ async function getResumoCategoria(categoria) {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   const agora = new Date();
   const mesAtual = agora.getMonth();
@@ -267,7 +361,7 @@ async function getResumoCategoria(categoria) {
 
   if (gastosMes.length === 0) return `📂 Nenhum gasto em *${categoria}* este mês.`;
 
-  const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+  const total = gastosMes.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
   const budgets = await getBudgets();
   const limite = budgets[categoria];
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -284,7 +378,7 @@ async function getResumoCategoria(categoria) {
 
   msg += `\n📋 Lançamentos:\n`;
   gastosMes.forEach(row => {
-    msg += `• ${row[0]} — R$ ${formatarValor(parseFloat((row[1] || "0").replace(",", ".")))} — ${row[3] || ""} (${row[6] || ""})\n`;
+    msg += `• ${row[0]} — R$ ${formatarValor(parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")))} — ${row[3] || ""} (${row[6] || ""})\n`;
   });
 
   return msg;
@@ -295,11 +389,7 @@ async function getRelatorioSemana() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   if (rows.length <= 1) return "📅 Nenhum gasto registrado ainda.";
 
@@ -336,20 +426,20 @@ async function getRelatorioSemana() {
 
   if (gastosSemana.length === 0) return `📅 Nenhum gasto registrado na semana de ${dataInicioStr} a ${dataFimStr}.`;
 
-  const total = gastosSemana.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
+  const total = gastosSemana.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", ".")), 0);
 
   const porCategoria = {};
   gastosSemana.forEach(row => {
     const cat = row[2] || "Outro";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
-    porCategoria[cat] = (porCategoria[cat] || 0) + val;
+    const val = parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", "."));
+    if (!isNaN(val)) porCategoria[cat] = (porCategoria[cat] || 0) + val;
   });
 
   const porPessoa = {};
   gastosSemana.forEach(row => {
     const pessoa = row[6] || "Desconhecido";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
-    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+    const val = parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", "."));
+    if (!isNaN(val)) porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
   });
 
   let msg = `📅 Relatório semanal\n`;
@@ -357,18 +447,14 @@ async function getRelatorioSemana() {
   msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
 
   msg += `📂 Por categoria:\n`;
-  Object.entries(porCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cat, val]) => {
-      msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).forEach(([cat, val]) => {
+    msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
+  });
 
   msg += `\n👤 Por pessoa:\n`;
-  Object.entries(porPessoa)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([pessoa, val]) => {
-      msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porPessoa).sort((a, b) => b[1] - a[1]).forEach(([pessoa, val]) => {
+    msg += `• ${pessoa}: R$ ${formatarValor(val)}\n`;
+  });
 
   return msg;
 }
@@ -383,11 +469,7 @@ async function getFechamentoMes() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   const mesAtual = agora.getMonth();
   const anoAtual = agora.getFullYear();
@@ -402,8 +484,8 @@ async function getFechamentoMes() {
   const porPessoa = {};
   gastosMes.forEach(row => {
     const pessoa = row[6] || "Desconhecido";
-    const val = parseFloat((row[1] || "0").replace(",", "."));
-    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+    const val = parseFloat((row[1] || "0").replace(/R\$\s*/g, "").replace(",", "."));
+    if (!isNaN(val)) porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
   });
 
   const budgets = await getBudgets();
@@ -430,9 +512,7 @@ async function getFechamentoMes() {
   msg += `${"─".repeat(25)}\n`;
   msg += `💰 Total gasto: R$ ${formatarValor(total)}\n`;
 
-  if (score !== null) {
-    msg += `⭐ Score financeiro: ${score}/10 — ${emojiScore(score)}\n`;
-  }
+  if (score !== null) msg += `⭐ Score financeiro: ${score}/10 — ${emojiScore(score)}\n`;
 
   if (totalBudget > 0) {
     const pctGeral = ((total / totalBudget) * 100).toFixed(0);
@@ -441,26 +521,22 @@ async function getFechamentoMes() {
   }
 
   msg += `\n📂 Por categoria:\n`;
-  Object.entries(porCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cat, val]) => {
-      const limite = budgets[cat];
-      if (limite) {
-        const pct = ((val / limite) * 100).toFixed(0);
-        const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
-        msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
-      } else {
-        msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
-      }
-    });
+  Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).forEach(([cat, val]) => {
+    const limite = budgets[cat];
+    if (limite) {
+      const pct = ((val / limite) * 100).toFixed(0);
+      const emoji = pct >= 100 ? "🔴" : pct >= 80 ? "🟡" : "🟢";
+      msg += `${emoji} ${cat}: R$ ${formatarValor(val)} / R$ ${formatarValor(limite)} (${pct}%)\n`;
+    } else {
+      msg += `• ${cat}: R$ ${formatarValor(val)}\n`;
+    }
+  });
 
   msg += `\n👤 Por pessoa:\n`;
-  Object.entries(porPessoa)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([pessoa, val]) => {
-      const pct = ((val / total) * 100).toFixed(0);
-      msg += `• ${pessoa}: R$ ${formatarValor(val)} (${pct}% do total)\n`;
-    });
+  Object.entries(porPessoa).sort((a, b) => b[1] - a[1]).forEach(([pessoa, val]) => {
+    const pct = ((val / total) * 100).toFixed(0);
+    msg += `• ${pessoa}: R$ ${formatarValor(val)} (${pct}% do total)\n`;
+  });
 
   msg += `\n📌 Destaques:\n`;
   msg += `• Maior gasto: ${maiorGasto[0]} (R$ ${formatarValor(maiorGasto[1])})\n`;
@@ -470,7 +546,6 @@ async function getFechamentoMes() {
   if (categoriasDentro.length > 0) msg += `• Dentro do budget: ${categoriasDentro.join(", ")}\n`;
 
   msg += `\n💡 "Quem controla seus gastos, controla seu futuro."`;
-
   return msg;
 }
 
@@ -523,11 +598,7 @@ async function getParcelasAbertas() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Parcelas!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Parcelas!A:H" });
   const rows = res.data.values || [];
   if (rows.length <= 1) return "💳 Nenhuma parcela em aberto.";
 
@@ -567,11 +638,9 @@ async function getParcelasAbertas() {
   msg += `📊 Total restante: R$ ${formatarValor(totalRestanteGeral)}\n\n`;
 
   msg += `💳 Por cartão (mensal):\n`;
-  Object.entries(porCartao)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cartao, val]) => {
-      msg += `• ${cartao}: R$ ${formatarValor(val)}\n`;
-    });
+  Object.entries(porCartao).sort((a, b) => b[1] - a[1]).forEach(([cartao, val]) => {
+    msg += `• ${cartao}: R$ ${formatarValor(val)}\n`;
+  });
 
   msg += `\n📅 Projeção:\n`;
   projecao.forEach(({ nomeMes, total }) => {
@@ -595,11 +664,7 @@ async function getUltimoLancamento(pessoa) {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Gastos!A:H",
-  });
-
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   const lancamentos = rows.slice(1);
 
@@ -646,4 +711,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getUltimoLancamento, deletarUltimoLancamento };
