@@ -6,58 +6,73 @@
 <title>Lolos Finance</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
-
-  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  .login-card { background: white; border-radius: 16px; padding: 2.5rem; width: 340px; border: 0.5px solid #e0e0d8; }
-  .login-card h1 { font-size: 20px; font-weight: 500; margin-bottom: 6px; }
-  .login-card p { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
-  .login-card input { width: 100%; padding: 10px 14px; border: 0.5px solid #d0d0c8; border-radius: 8px; font-size: 14px; margin-bottom: 12px; outline: none; }
-  .login-card input:focus { border-color: #378ADD; }
-  .login-card button { width: 100%; padding: 10px; background: #1a1a1a; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
-  .login-card button:hover { background: #333; }
-  .login-error { font-size: 12px; color: #E24B4A; margin-top: 8px; display: none; }
-
-  #dashboard { display: none; padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-  .header h1 { font-size: 20px; font-weight: 500; }
-  .header p { font-size: 13px; color: #888; margin-top: 2px; }
-  .logout-btn { font-size: 13px; color: #888; cursor: pointer; background: none; border: 0.5px solid #d0d0c8; border-radius: 8px; padding: 6px 12px; }
-
-  .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
-  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
-
-  .metric { background: #efefea; border-radius: 10px; padding: 1rem; }
-  .metric-label { font-size: 12px; color: #888; margin-bottom: 4px; }
-  .metric-value { font-size: 22px; font-weight: 500; }
-  .metric-sub { font-size: 12px; color: #aaa; margin-top: 2px; }
-
-  .card { background: white; border: 0.5px solid #e0e0d8; border-radius: 14px; padding: 1.25rem; }
-  .section-title { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
-
-  .progress-bg { background: #f0f0ea; border-radius: 99px; height: 6px; overflow: hidden; margin-top: 5px; }
-  .progress-fill { height: 100%; border-radius: 99px; }
-
-  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
-  .badge-green { background: #EAF3DE; color: #3B6D11; }
-  .badge-amber { background: #FAEEDA; color: #854F0B; }
-  .badge-red { background: #FCEBEB; color: #A32D2D; }
-  .badge-orange { background: #FAECE7; color: #993C1D; }
-
-  .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #f0f0ea; }
-  .row:last-child { border-bottom: none; }
-
-  .score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-
-  .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: #aaa; font-size: 14px; }
-
-  @media (max-width: 700px) {
-    .grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .grid-3 { grid-template-columns: 1fr; }
-    .grid-2 { grid-template-columns: 1fr; }
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:#fff;border-radius:16px;padding:2.5rem;width:340px;border:0.5px solid #e0e0d8}
+.login-card h1{font-size:20px;font-weight:500;margin-bottom:6px}
+.login-card p{font-size:13px;color:#888;margin-bottom:1.5rem}
+.login-card input{width:100%;padding:10px 14px;border:0.5px solid #d0d0c8;border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+.login-card input:focus{border-color:#378ADD}
+.login-card button{width:100%;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+.login-error{font-size:12px;color:#E24B4A;margin-top:8px;display:none}
+#app{display:none;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:210px;background:#1a1a1a;padding:1.5rem 1rem;flex-shrink:0;display:flex;flex-direction:column}
+.logo{color:#fff;font-size:15px;font-weight:500;margin-bottom:2rem;display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;background:#FAC775;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#412402}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:rgba(255,255,255,0.55);cursor:pointer;margin-bottom:2px;transition:all 0.15s}
+.nav-item:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#fff}
+.nav-item i{font-size:16px}
+.nav-section{font-size:10px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.08em;padding:12px 10px 6px;margin-top:8px}
+.nav-bottom{margin-top:auto}
+.main{flex:1;padding:1.5rem;overflow-x:hidden}
+.page{display:none}
+.page.active{display:block}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+.topbar-left h1{font-size:18px;font-weight:500}
+.topbar-left p{font-size:12px;color:#999;margin-top:2px}
+.filters{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fsel{padding:6px 10px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer;outline:none}
+.fbtn{padding:6px 12px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer;transition:all 0.15s}
+.fbtn:hover{background:#f5f5f0}
+.fbtn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.25rem}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.25rem}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:1.25rem}
+.grid2e{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+.metric{background:#efefea;border-radius:10px;padding:1rem}
+.metric-label{font-size:11px;color:#888;margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:500}
+.metric-sub{font-size:11px;color:#aaa;margin-top:2px}
+.card{background:#fff;border:0.5px solid #e0e0d8;border-radius:14px;padding:1.25rem;margin-bottom:12px}
+.stitle{font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.stitle a{font-size:11px;color:#378ADD;text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:500}
+.bg{background:#EAF3DE;color:#3B6D11}
+.ba{background:#FAEEDA;color:#854F0B}
+.br{background:#FCEBEB;color:#A32D2D}
+.bblue{background:#E6F1FB;color:#185FA5}
+.bgray{background:#F1EFE8;color:#5F5E5A}
+.progress-bg{background:#f0f0ea;border-radius:99px;height:5px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;border-radius:99px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
+.row:last-child{border-bottom:none}
+.tab-bar{display:flex;gap:3px;background:#f0f0ea;padding:3px;border-radius:8px;margin-bottom:1rem;width:fit-content}
+.tab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:#888;transition:all 0.15s}
+.tab.active{background:#fff;color:#1a1a1a;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;background:#f0f0ea;color:#555;cursor:pointer}
+.chip.active{background:#1a1a1a;color:#fff}
+.chip-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.tx-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
+.tx-row:last-child{border-bottom:none}
+.tx-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.loading-msg{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+.up{color:#A32D2D}
+.down{color:#3B6D11}
+.empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
 </style>
 </head>
 <body>
@@ -65,279 +80,681 @@
 <div id="login-screen">
   <div class="login-card">
     <h1>Lolos Finance</h1>
-    <p>Digite a senha para acessar o dashboard</p>
-    <input type="password" id="senha-input" placeholder="Senha" onkeydown="if(event.key==='Enter') login()" />
+    <p>Digite a senha para acessar</p>
+    <input type="password" id="senha-input" placeholder="Senha" onkeydown="if(event.key==='Enter')login()"/>
     <button onclick="login()">Entrar</button>
     <p class="login-error" id="login-error">Senha incorreta.</p>
   </div>
 </div>
 
-<div id="dashboard">
-  <div class="header">
-    <div>
-      <h1>Lolos Finance</h1>
-      <p id="header-sub">carregando...</p>
-    </div>
-    <button class="logout-btn" onclick="logout()">Sair</button>
-  </div>
-
-  <div class="grid-4" id="metrics">
-    <div class="metric"><p class="metric-label">Total gasto no mês</p><p class="metric-value" id="m-total">—</p><p class="metric-sub" id="m-total-sub">—</p></div>
-    <div class="metric"><p class="metric-label">Parcelas mensais</p><p class="metric-value" id="m-parcelas">—</p><p class="metric-sub" id="m-parcelas-sub">—</p></div>
-    <div class="metric"><p class="metric-label">Total restante</p><p class="metric-value" id="m-restante">—</p><p class="metric-sub" id="m-restante-sub">—</p></div>
-    <div class="metric"><p class="metric-label">Score financeiro</p><p class="metric-value" id="m-score">—</p><p class="metric-sub" id="m-score-sub">—</p></div>
-  </div>
-
-  <div class="grid-3">
-    <div class="card" style="grid-column: span 2;">
-      <p class="section-title">Gastos por categoria</p>
-      <div style="position: relative; height: 260px;"><canvas id="catChart" role="img" aria-label="Gastos por categoria"></canvas></div>
-      <div style="display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap;">
-        <span style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #999;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #5DCAA5;"></span>dentro do budget</span>
-        <span style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #999;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #FAC775;"></span>acima de 80%</span>
-        <span style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #999;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #F09595;"></span>estourado</span>
+<div id="app">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">L</div>
+        Lolos Finance
+      </div>
+      <div class="nav-item active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i> Visão geral</div>
+      <div class="nav-item" onclick="showPage('faturas')"><i class="ti ti-credit-card"></i> Faturas</div>
+      <div class="nav-item" onclick="showPage('parcelas')"><i class="ti ti-repeat"></i> Parcelas</div>
+      <div class="nav-item" onclick="showPage('transacoes')"><i class="ti ti-list"></i> Lançamentos</div>
+      <div class="nav-item" onclick="showPage('relatorios')"><i class="ti ti-chart-bar"></i> Relatórios</div>
+      <div class="nav-bottom">
+        <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Sair</div>
       </div>
     </div>
-    <div class="card">
-      <p class="section-title">Por pessoa</p>
-      <div style="position: relative; height: 180px;"><canvas id="pessoaChart" role="img" aria-label="Gastos por pessoa"></canvas></div>
-      <div id="pessoa-legend" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;"></div>
-    </div>
-  </div>
 
-  <div class="grid-3">
-    <div class="card">
-      <p class="section-title">Faturas em aberto</p>
-      <div id="faturas-list" style="display: flex; flex-direction: column; gap: 14px;"></div>
-    </div>
-    <div class="card">
-      <p class="section-title">Projeção de parcelas</p>
-      <div style="position: relative; height: 200px;"><canvas id="projecaoChart" role="img" aria-label="Projeção de parcelas"></canvas></div>
-    </div>
-    <div class="card">
-      <p class="section-title">Score por categoria</p>
-      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 14px;">
-        <div class="score-circle" id="score-circle" style="border: 3px solid #639922;">
-          <span style="font-size: 22px; font-weight: 500;" id="score-num">—</span>
-          <span style="font-size: 10px; color: #999;">/ 10</span>
+    <div class="main">
+
+      <!-- VISÃO GERAL -->
+      <div class="page active" id="page-overview">
+        <div class="topbar">
+          <div class="topbar-left">
+            <h1>Visão geral</h1>
+            <p id="ov-sub">carregando...</p>
+          </div>
+          <div class="filters">
+            <select class="fsel" id="ov-mes" onchange="loadOverview()"></select>
+            <select class="fsel" id="ov-cartao" onchange="loadOverview()">
+              <option value="todos">Todos os cartões</option>
+            </select>
+            <select class="fsel" id="ov-pessoa" onchange="loadOverview()">
+              <option value="todos">Todas as pessoas</option>
+            </select>
+          </div>
         </div>
-        <div><p style="font-size: 14px; font-weight: 500;" id="score-label">—</p><p style="font-size: 12px; color: #999; margin-top: 2px;" id="score-sub">—</p></div>
+        <div class="grid4">
+          <div class="metric"><p class="metric-label">Total gasto</p><p class="metric-value" id="ov-total">—</p><p class="metric-sub" id="ov-total-sub">—</p></div>
+          <div class="metric"><p class="metric-label">Parcelas mensais</p><p class="metric-value" id="ov-parcelas">—</p><p class="metric-sub" id="ov-parcelas-sub">—</p></div>
+          <div class="metric"><p class="metric-label">Total restante</p><p class="metric-value" id="ov-restante">—</p><p class="metric-sub">compromisso futuro</p></div>
+          <div class="metric"><p class="metric-label">Score financeiro</p><p class="metric-value" id="ov-score">—</p><p class="metric-sub" id="ov-score-sub">—</p></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <p class="stitle">Gastos por categoria
+              <span>
+                <span class="chip active" onclick="setCatFiltro('todos',this)" style="margin-right:4px">Todos</span>
+                <span class="chip" onclick="setCatFiltro('À vista',this)" style="margin-right:4px">À vista</span>
+                <span class="chip" onclick="setCatFiltro('Parcelado',this)">Parcelado</span>
+              </span>
+            </p>
+            <div id="ov-categorias"><div class="loading-msg">Carregando...</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card">
+              <p class="stitle">Faturas</p>
+              <div id="ov-faturas-mini"><div class="loading-msg">...</div></div>
+            </div>
+            <div class="card">
+              <p class="stitle">Por pessoa</p>
+              <div id="ov-pessoas"><div class="loading-msg">...</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="stitle">Últimos lançamentos <a onclick="showPage('transacoes')">ver todos</a></p>
+          <div id="ov-transacoes"><div class="loading-msg">Carregando...</div></div>
+        </div>
       </div>
-      <div id="score-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
-    </div>
-  </div>
 
-  <div class="card" style="margin-bottom: 1.5rem;">
-    <p class="section-title">Evolução mensal</p>
-    <div style="position: relative; height: 180px;"><canvas id="evolucaoChart" role="img" aria-label="Evolução de gastos mensais"></canvas></div>
+      <!-- FATURAS -->
+      <div class="page" id="page-faturas">
+        <div class="topbar">
+          <div class="topbar-left"><h1>Faturas em aberto</h1><p id="fat-sub">—</p></div>
+          <div class="filters">
+            <select class="fsel" id="fat-cartao" onchange="loadFaturas()">
+              <option value="todos">Todos os cartões</option>
+            </select>
+          </div>
+        </div>
+        <div id="fat-content"><div class="loading-msg">Carregando...</div></div>
+      </div>
+
+      <!-- PARCELAS -->
+      <div class="page" id="page-parcelas">
+        <div class="topbar">
+          <div class="topbar-left"><h1>Parcelas em aberto</h1><p id="par-sub">—</p></div>
+          <div class="filters">
+            <select class="fsel" id="par-cartao" onchange="renderParcelas()">
+              <option value="todos">Todos os cartões</option>
+            </select>
+            <select class="fsel" id="par-pessoa" onchange="renderParcelas()">
+              <option value="todos">Todas as pessoas</option>
+            </select>
+            <select class="fsel" id="par-ordem" onchange="renderParcelas()">
+              <option value="valor">Ordenar: valor</option>
+              <option value="restantes">Ordenar: restantes</option>
+              <option value="nome">Ordenar: nome</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid3" id="par-metrics"></div>
+        <div class="grid2e">
+          <div class="card">
+            <p class="stitle">Por cartão (mensal)</p>
+            <div id="par-cartoes"></div>
+          </div>
+          <div class="card">
+            <p class="stitle">Projeção próximos meses</p>
+            <div id="par-projecao"></div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="stitle">Lista de parcelas</p>
+          <div id="par-lista"><div class="loading-msg">Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- LANÇAMENTOS -->
+      <div class="page" id="page-transacoes">
+        <div class="topbar">
+          <div class="topbar-left"><h1>Lançamentos</h1><p id="tx-sub">—</p></div>
+          <div class="filters">
+            <select class="fsel" id="tx-mes" onchange="loadTransacoes()"></select>
+            <select class="fsel" id="tx-cartao" onchange="loadTransacoes()">
+              <option value="todos">Todos os cartões</option>
+            </select>
+            <select class="fsel" id="tx-pessoa" onchange="loadTransacoes()">
+              <option value="todos">Todas as pessoas</option>
+            </select>
+            <select class="fsel" id="tx-tipo" onchange="loadTransacoes()">
+              <option value="todos">Todos os tipos</option>
+              <option value="À vista">À vista</option>
+              <option value="Parcelado">Parcelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div id="tx-content"><div class="loading-msg">Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- RELATÓRIOS -->
+      <div class="page" id="page-relatorios">
+        <div class="topbar">
+          <div class="topbar-left"><h1>Relatórios</h1><p>análise histórica</p></div>
+          <div class="filters">
+            <button class="fbtn" onclick="setMesesRel(3,this)">3 meses</button>
+            <button class="fbtn active" onclick="setMesesRel(6,this)">6 meses</button>
+            <button class="fbtn" onclick="setMesesRel(12,this)">12 meses</button>
+          </div>
+        </div>
+        <div class="grid3" id="rel-metrics"></div>
+        <div class="grid2e">
+          <div class="card">
+            <p class="stitle">Evolução mensal</p>
+            <div style="position:relative;height:200px"><canvas id="rel-evol-chart" role="img" aria-label="Evolução mensal de gastos"></canvas></div>
+          </div>
+          <div class="card">
+            <p class="stitle">Top categorias</p>
+            <div id="rel-categorias"></div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="stitle">Comparativo por categoria</p>
+          <div id="rel-comparativo"><div class="loading-msg">Carregando...</div></div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+
 <script>
 const SENHA = 'lolosfinance';
+let dadosResumo = null, dadosParcelas = null, dadosFaturas = null, dadosTransacoes = null;
+let catFiltroTipo = 'todos';
+let mesesRel = 6;
 let charts = {};
 
 function login() {
-  const input = document.getElementById('senha-input').value;
-  if (input === SENHA) {
+  if (document.getElementById('senha-input').value === SENHA) {
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadDashboard();
+    document.getElementById('app').style.display = 'block';
+    initDashboard();
   } else {
     document.getElementById('login-error').style.display = 'block';
   }
 }
 
 function logout() {
-  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('senha-input').value = '';
 }
 
 function fmt(v) {
-  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (isNaN(v) || v === null || v === undefined) return 'R$ 0,00';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function fmtK(v) {
-  if (v >= 1000) return 'R$ ' + (v / 1000).toFixed(1).replace('.', ',') + 'k';
+  if (isNaN(v) || v === null) return 'R$ 0';
+  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'k';
   return 'R$ ' + Math.round(v);
 }
 
-function badgeClass(pct) {
-  if (pct >= 100) return 'badge-red';
-  if (pct >= 80) return 'badge-amber';
-  return 'badge-green';
+function pctClass(pct) {
+  if (pct >= 100) return 'br';
+  if (pct >= 80) return 'ba';
+  return 'bg';
 }
 
 function barColor(pct) {
   if (pct >= 100) return '#F09595';
-  if (pct >= 80) return '#FAC775';
+  if (pct >= 80) return '#EF9F27';
   return '#5DCAA5';
 }
 
-function scoreLabel(s) {
-  if (s >= 9) return ['#639922', 'Excelente', ''];
-  if (s >= 7) return ['#639922', 'Bom', ''];
-  if (s >= 5) return ['#BA7517', 'Regular', ''];
-  if (s >= 3) return ['#993C1D', 'Atenção', ''];
-  return ['#A32D2D', 'Crítico', ''];
+function catIcon(cat) {
+  const m = {alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',fármacia:'ti-pill',mercado:'ti-building-store'};
+  return m[(cat||'').toLowerCase()] || 'ti-receipt';
 }
 
-async function loadDashboard() {
+function catColor(cat) {
+  const m = {alimentação:'#EAF3DE',restaurante:'#FAEEDA',transporte:'#E6F1FB',saúde:'#FCEBEB',lazer:'#FBEAF0',compras:'#E1F5EE',viagem:'#EEEDFE',moradia:'#F1EFE8',educação:'#E6F1FB',pets:'#FAEEDA',academia:'#EAF3DE'};
+  return m[(cat||'').toLowerCase()] || '#F1EFE8';
+}
+
+function catTextColor(cat) {
+  const m = {alimentação:'#3B6D11',restaurante:'#854F0B',transporte:'#185FA5',saúde:'#A32D2D',lazer:'#993556',compras:'#085041',viagem:'#3C3489',moradia:'#5F5E5A',educação:'#185FA5',pets:'#854F0B',academia:'#3B6D11'};
+  return m[(cat||'').toLowerCase()] || '#5F5E5A';
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const navMap = {overview:0,faturas:1,parcelas:2,transacoes:3,relatorios:4};
+  document.querySelectorAll('.nav-item')[navMap[id]]?.classList.add('active');
+
+  if (id === 'faturas') loadFaturas();
+  if (id === 'parcelas') loadParcelas();
+  if (id === 'transacoes') loadTransacoes();
+  if (id === 'relatorios') loadRelatorio();
+}
+
+function getMesAtual() { return new Date().getMonth(); }
+function getAnoAtual() { return new Date().getFullYear(); }
+
+function populateMesSelect(selId, defaultMes, defaultAno) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '';
+  const agora = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = d.getMonth() + '|' + d.getFullYear();
+    opt.textContent = label;
+    if (d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+async function initDashboard() {
+  populateMesSelect('ov-mes');
+  populateMesSelect('tx-mes');
+
   try {
-    const [resumo, faturas, parcelas] = await Promise.all([
-      fetch('/api/resumo').then(r => r.json()),
-      fetch('/api/faturas').then(r => r.json()),
-      fetch('/api/parcelas').then(r => r.json()),
+    const [resumo, parcelas, faturas] = await Promise.all([
+      fetch('/api/resumo').then(r=>r.json()),
+      fetch('/api/parcelas').then(r=>r.json()),
+      fetch('/api/faturas').then(r=>r.json()),
     ]);
+    dadosResumo = resumo;
+    dadosParcelas = parcelas;
+    dadosFaturas = faturas;
 
-    const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-    document.getElementById('header-sub').textContent = nomeMes + ' · atualizado agora';
+    const cartoes = [...new Set(faturas.cartoes.map(c=>c.nome))];
+    const pessoas = [...new Set(Object.keys(resumo.porPessoa || {}))];
 
-    document.getElementById('m-total').textContent = fmtK(resumo.total);
-    document.getElementById('m-total-sub').textContent = resumo.totalMesAnterior ? (resumo.total > resumo.totalMesAnterior ? '+' : '') + Math.round((resumo.total - resumo.totalMesAnterior) / resumo.totalMesAnterior * 100) + '% vs mês anterior' : '';
-    document.getElementById('m-parcelas').textContent = fmtK(parcelas.totalMensal);
-    document.getElementById('m-parcelas-sub').textContent = parcelas.quantidade + ' parcelas em aberto';
-    document.getElementById('m-restante').textContent = fmtK(parcelas.totalRestante);
-    document.getElementById('m-restante-sub').textContent = 'compromisso total';
-
-    const score = parseFloat(resumo.score || 0);
-    document.getElementById('m-score').textContent = score.toFixed(1) + ' / 10';
-    const [scoreColor, scoreLbl] = scoreLabel(score);
-    document.getElementById('m-score-sub').textContent = scoreLbl;
-    document.getElementById('score-num').textContent = score.toFixed(1);
-    document.getElementById('score-num').style.color = scoreColor;
-    document.getElementById('score-circle').style.borderColor = scoreColor;
-    document.getElementById('score-label').textContent = scoreLbl;
-
-    const cats = Object.entries(resumo.porCategoria).sort((a, b) => b[1] - a[1]);
-    const budgets = resumo.budgets || {};
-    const catColors = cats.map(([cat, val]) => {
-      const lim = budgets[cat];
-      if (!lim) return '#85B7EB';
-      const pct = (val / lim) * 100;
-      return barColor(pct);
+    ['ov-cartao','fat-cartao','par-cartao','tx-cartao'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      cartoes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
     });
 
-    if (charts.cat) charts.cat.destroy();
-    charts.cat = new Chart(document.getElementById('catChart'), {
-      type: 'bar',
-      data: {
-        labels: cats.map(([c]) => c),
-        datasets: [{ data: cats.map(([, v]) => v), backgroundColor: catColors, borderRadius: 4, borderSkipped: false }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
-        scales: {
-          x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#999', callback: v => fmtK(v) } },
-          y: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#666' } }
-        }
-      }
+    ['ov-pessoa','par-pessoa','tx-pessoa'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      pessoas.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
     });
 
-    const pessoas = Object.entries(resumo.porPessoa).sort((a, b) => b[1] - a[1]);
-    const pessoaColors = ['#378ADD', '#D4537E', '#5DCAA5', '#EF9F27'];
-    if (charts.pessoa) charts.pessoa.destroy();
-    charts.pessoa = new Chart(document.getElementById('pessoaChart'), {
-      type: 'doughnut',
-      data: {
-        labels: pessoas.map(([p]) => p),
-        datasets: [{ data: pessoas.map(([, v]) => v), backgroundColor: pessoaColors.slice(0, pessoas.length), borderWidth: 0, hoverOffset: 4 }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '68%',
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } }
-      }
-    });
+    renderOverview();
+  } catch(e) {
+    console.error('Erro ao inicializar:', e);
+  }
+}
 
-    const legend = document.getElementById('pessoa-legend');
-    legend.innerHTML = pessoas.map(([p, v], i) => `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
-          <span style="width: 10px; height: 10px; border-radius: 2px; background: ${pessoaColors[i]};"></span>${p}
-        </span>
-        <span style="font-size: 13px; font-weight: 500;">${fmtK(v)} <span style="font-size: 11px; color: #999;">${Math.round(v / resumo.total * 100)}%</span></span>
+function getSelectedMes(selId) {
+  const val = document.getElementById(selId)?.value || '';
+  const [m, a] = val.split('|');
+  return { mes: parseInt(m), ano: parseInt(a) };
+}
+
+async function loadOverview() {
+  const {mes, ano} = getSelectedMes('ov-mes');
+  try {
+    const resumo = await fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json());
+    dadosResumo = resumo;
+    renderOverview();
+  } catch(e) { console.error(e); }
+}
+
+function renderOverview() {
+  if (!dadosResumo || !dadosParcelas || !dadosFaturas) return;
+  const r = dadosResumo, p = dadosParcelas, f = dadosFaturas;
+  const cartao = document.getElementById('ov-cartao')?.value || 'todos';
+  const pessoa = document.getElementById('ov-pessoa')?.value || 'todos';
+
+  const nomeMes = new Date().toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  document.getElementById('ov-sub').textContent = nomeMes + ' · atualizado agora';
+
+  document.getElementById('ov-total').textContent = fmtK(r.total);
+  const pctVar = r.totalMesAnterior ? Math.round((r.total - r.totalMesAnterior) / r.totalMesAnterior * 100) : 0;
+  const varEl = document.getElementById('ov-total-sub');
+  varEl.textContent = r.totalMesAnterior ? `${pctVar > 0 ? '↑' : '↓'} ${Math.abs(pctVar)}% vs mês anterior` : '';
+  varEl.className = 'metric-sub ' + (pctVar > 0 ? 'up' : 'down');
+
+  document.getElementById('ov-parcelas').textContent = fmtK(p.totalMensal);
+  document.getElementById('ov-parcelas-sub').textContent = p.quantidade + ' parcelas em aberto';
+  document.getElementById('ov-restante').textContent = fmtK(p.totalRestante);
+
+  const score = parseFloat(r.score || 0);
+  document.getElementById('ov-score').textContent = score.toFixed(1) + ' / 10';
+  document.getElementById('ov-score-sub').textContent = score >= 9 ? 'Excelente' : score >= 7 ? 'Bom' : score >= 5 ? 'Regular' : score >= 3 ? 'Atenção' : 'Crítico';
+
+  const budgets = r.budgets || {};
+  let cats = Object.entries(r.porCategoria || {}).sort((a,b) => b[1]-a[1]);
+  if (catFiltroTipo !== 'todos') {
+    // filtro aplicado via transações — simplifica mostrando todas com label
+  }
+  document.getElementById('ov-categorias').innerHTML = cats.slice(0,8).map(([cat, val]) => {
+    const lim = budgets[cat];
+    const pct = lim ? Math.round((val/lim)*100) : null;
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:12px;color:#444">${cat}</span>
+        <span style="font-size:12px;font-weight:500">${fmtK(val)} ${pct !== null ? `<span class="badge ${pctClass(pct)}">${pct}%</span>` : ''}</span>
+      </div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${pct !== null ? Math.min(pct,100) : 50}%;background:${pct !== null ? barColor(pct) : '#85B7EB'}"></div></div>
+    </div>`;
+  }).join('');
+
+  let fatFiltered = f.cartoes;
+  if (cartao !== 'todos') fatFiltered = fatFiltered.filter(c => c.nome === cartao);
+  document.getElementById('ov-faturas-mini').innerHTML = fatFiltered.map(c => {
+    const pct = c.limite ? Math.round((c.total/c.limite)*100) : null;
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:500">${c.nome}</span>
+        ${pct !== null ? `<span class="badge ${pctClass(pct)}">${pct}%</span>` : ''}
+      </div>
+      <div style="font-size:11px;color:#999;margin-bottom:3px">${c.limite ? fmt(c.total) + ' / ' + fmt(c.limite) : fmt(c.total)} · ${c.diasRestantes}d</div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${pct !== null ? Math.min(pct,100) : 0}%;background:${pct !== null ? barColor(pct) : '#85B7EB'}"></div></div>
+    </div>`;
+  }).join('');
+
+  let pessoasData = Object.entries(r.porPessoa || {}).sort((a,b)=>b[1]-a[1]);
+  if (pessoa !== 'todos') pessoasData = pessoasData.filter(([p]) => p === pessoa);
+  const totalPessoas = pessoasData.reduce((a,[,v])=>a+v,0);
+  const pessoaColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
+  document.getElementById('ov-pessoas').innerHTML = pessoasData.map(([p,v],i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:28px;height:28px;border-radius:50%;background:${pessoaColors[i]}22;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:${pessoaColors[i]};flex-shrink:0">${p.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+          <span style="font-size:12px">${p}</span>
+          <span style="font-size:12px;font-weight:500">${fmtK(v)} <span style="color:#aaa;font-weight:400">${totalPessoas ? Math.round(v/totalPessoas*100) : 0}%</span></span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${totalPessoas ? Math.round(v/totalPessoas*100) : 0}%;background:${pessoaColors[i]}"></div></div>
+      </div>
+    </div>
+  `).join('');
+
+  loadRecentTransacoes();
+}
+
+async function loadRecentTransacoes() {
+  const {mes, ano} = getSelectedMes('ov-mes');
+  const cartao = document.getElementById('ov-cartao')?.value || 'todos';
+  const pessoa = document.getElementById('ov-pessoa')?.value || 'todos';
+  try {
+    let url = `/api/transacoes?mes=${mes}&ano=${ano}`;
+    if (cartao !== 'todos') url += `&cartao=${encodeURIComponent(cartao)}`;
+    if (pessoa !== 'todos') url += `&pessoa=${encodeURIComponent(pessoa)}`;
+    const data = await fetch(url).then(r=>r.json());
+    const txs = (data.transacoes || []).slice(0,6);
+    if (txs.length === 0) { document.getElementById('ov-transacoes').innerHTML = '<div class="empty">Nenhum lançamento encontrado</div>'; return; }
+    document.getElementById('ov-transacoes').innerHTML = txs.map(tx => `
+      <div class="tx-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="tx-icon" style="background:${catColor(tx.categoria)};color:${catTextColor(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
+          <div>
+            <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
+            <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · ${tx.tipo}</p>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
+          <p style="font-size:11px;color:#999">${tx.responsavel}</p>
+        </div>
       </div>
     `).join('');
+  } catch(e) { console.error(e); }
+}
 
-    const fatList = document.getElementById('faturas-list');
-    fatList.innerHTML = faturas.cartoes.map(c => {
-      const pct = c.limite ? Math.round((c.total / c.limite) * 100) : null;
-      const bc = pct !== null ? badgeClass(pct) : 'badge-green';
-      const bw = pct !== null ? Math.min(pct, 100) : 0;
-      const bf = pct !== null ? barColor(pct) : '#5DCAA5';
-      return `
+function setCatFiltro(tipo, el) {
+  catFiltroTipo = tipo;
+  document.querySelectorAll('#page-overview .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderOverview();
+}
+
+function loadFaturas() {
+  if (!dadosFaturas) return;
+  const cartao = document.getElementById('fat-cartao')?.value || 'todos';
+  let fat = dadosFaturas.cartoes;
+  if (cartao !== 'todos') fat = fat.filter(c => c.nome === cartao);
+
+  document.getElementById('fat-sub').textContent = fat.length + ' cartões · ' + new Date().toLocaleDateString('pt-BR', {month:'long',year:'numeric'});
+
+  document.getElementById('fat-content').innerHTML = fat.map(c => {
+    const pct = c.limite ? Math.round((c.total/c.limite)*100) : null;
+    const alerta = pct !== null ? (pct >= 100 ? '🔴 Limite ultrapassado. Controle-se.' : pct >= 80 ? '🟠 Ritmo elevado. Risco de estourar.' : c.pctCiclo && pct - c.pctCiclo >= 20 ? '🟡 Consumo acima do esperado para o ciclo.' : '✅ Consumo dentro do esperado.') : '';
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-size: 13px; font-weight: 500;">${c.nome}</span>
-            ${pct !== null ? `<span class="badge ${bc}">${pct}%</span>` : ''}
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="font-size: 12px; color: #999;">${c.limite ? fmt(c.total) + ' / ' + fmt(c.limite) : fmt(c.total)}</span>
-            <span style="font-size: 11px; color: #bbb;">${c.diasRestantes} dias</span>
-          </div>
-          <div class="progress-bg"><div class="progress-fill" style="width: ${bw}%; background: ${bf};"></div></div>
+          <p style="font-size:16px;font-weight:500">${c.nome}</p>
+          <p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias até fechar</p>
         </div>
-      `;
-    }).join('');
+        ${pct !== null ? `<span class="badge ${pctClass(pct)}" style="font-size:13px;padding:4px 10px">${pct}%</span>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">
+        <div class="metric"><p class="metric-label">À vista</p><p class="metric-value" style="font-size:16px">${fmt(c.aVista)}</p></div>
+        <div class="metric"><p class="metric-label">Parcelas</p><p class="metric-value" style="font-size:16px">${fmt(c.parcelas)}</p></div>
+        <div class="metric"><p class="metric-label">Total</p><p class="metric-value" style="font-size:16px">${fmt(c.total)}${c.limite ? ` <span style="font-size:12px;color:#aaa">/ ${fmt(c.limite)}</span>` : ''}</p></div>
+      </div>
+      ${pct !== null ? `<div class="progress-bg" style="height:8px;margin-bottom:8px"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor(pct)}"></div></div>` : ''}
+      ${alerta ? `<p style="font-size:12px;color:#666;margin-top:8px">${alerta}</p>` : ''}
+    </div>`;
+  }).join('');
+}
 
-    const proj = parcelas.projecao || [];
-    if (charts.proj) charts.proj.destroy();
-    charts.proj = new Chart(document.getElementById('projecaoChart'), {
+async function loadParcelas() {
+  if (!dadosParcelas) {
+    dadosParcelas = await fetch('/api/parcelas').then(r=>r.json());
+  }
+  const p = dadosParcelas;
+
+  const cartoes = [...new Set((p.lista||[]).map(x=>x.cartao).filter(Boolean))];
+  const pessoas = [...new Set((p.lista||[]).map(x=>x.responsavel).filter(Boolean))];
+
+  ['par-cartao'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="todos">Todos os cartões</option>';
+    cartoes.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+    sel.value = cur;
+  });
+
+  ['par-pessoa'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="todos">Todas as pessoas</option>';
+    pessoas.forEach(pp => { const o = document.createElement('option'); o.value=pp; o.textContent=pp; sel.appendChild(o); });
+    sel.value = cur;
+  });
+
+  document.getElementById('par-sub').textContent = p.quantidade + ' parcelas em aberto';
+
+  document.getElementById('par-metrics').innerHTML = `
+    <div class="metric"><p class="metric-label">Compromisso mensal</p><p class="metric-value">${fmtK(p.totalMensal)}</p><p class="metric-sub">soma das parcelas</p></div>
+    <div class="metric"><p class="metric-label">Total restante</p><p class="metric-value">${fmtK(p.totalRestante)}</p><p class="metric-sub">até quitação</p></div>
+    <div class="metric"><p class="metric-label">Qtd em aberto</p><p class="metric-value">${p.quantidade}</p><p class="metric-sub">parcelas ativas</p></div>
+  `;
+
+  const porCartao = {};
+  (p.lista||[]).forEach(x => { porCartao[x.cartao] = (porCartao[x.cartao]||0) + x.valorParcela; });
+  const cartaoColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
+  document.getElementById('par-cartoes').innerHTML = Object.entries(porCartao).sort((a,b)=>b[1]-a[1]).map(([c,v],i) => `
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${cartaoColors[i]||'#888'};display:inline-block"></span><span style="font-size:13px">${c}</span></div>
+      <span style="font-size:13px;font-weight:500">${fmt(v)}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('par-projecao').innerHTML = (p.projecao||[]).map((x,i) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span>
+        <span style="font-size:12px">${fmt(x.total)}</span>
+      </div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${p.totalMensal ? Math.round(x.total/p.totalMensal*100) : 0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
+    </div>
+  `).join('');
+
+  renderParcelas();
+}
+
+function renderParcelas() {
+  if (!dadosParcelas) return;
+  const cartao = document.getElementById('par-cartao')?.value || 'todos';
+  const pessoa = document.getElementById('par-pessoa')?.value || 'todos';
+  const ordem = document.getElementById('par-ordem')?.value || 'valor';
+  let lista = [...(dadosParcelas.lista||[])];
+  if (cartao !== 'todos') lista = lista.filter(x => x.cartao === cartao);
+  if (pessoa !== 'todos') lista = lista.filter(x => x.responsavel === pessoa);
+  if (ordem === 'restantes') lista.sort((a,b) => b.restantes - a.restantes);
+  else if (ordem === 'nome') lista.sort((a,b) => a.descricao.localeCompare(b.descricao));
+  else lista.sort((a,b) => b.valorParcela - a.valorParcela);
+
+  if (lista.length === 0) { document.getElementById('par-lista').innerHTML = '<div class="empty">Nenhuma parcela encontrada</div>'; return; }
+
+  document.getElementById('par-lista').innerHTML = lista.map(x => {
+    const pct = Math.round((x.parcelasPagas/x.totalParcelas)*100);
+    return `<div class="row" style="align-items:flex-start;padding:10px 0">
+      <div>
+        <p style="font-size:13px;font-weight:500">${x.descricao}</p>
+        <p style="font-size:11px;color:#999;margin-top:2px">${x.cartao} · ${x.responsavel} · ${x.categoria}</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <div style="width:80px;"><div class="progress-bg"><div class="progress-fill" style="width:${pct}%;background:#85B7EB"></div></div></div>
+          <span style="font-size:11px;color:#999">${x.parcelasPagas}/${x.totalParcelas} pagas</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <p style="font-size:13px;font-weight:500">${fmt(x.valorParcela)}/mês</p>
+        <span class="badge bblue" style="margin-top:4px">${x.restantes} restantes</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadTransacoes() {
+  const {mes, ano} = getSelectedMes('tx-mes');
+  const cartao = document.getElementById('tx-cartao')?.value || 'todos';
+  const pessoa = document.getElementById('tx-pessoa')?.value || 'todos';
+  const tipo = document.getElementById('tx-tipo')?.value || 'todos';
+  document.getElementById('tx-content').innerHTML = '<div class="loading-msg">Carregando...</div>';
+  try {
+    let url = `/api/transacoes?mes=${mes}&ano=${ano}`;
+    if (cartao !== 'todos') url += `&cartao=${encodeURIComponent(cartao)}`;
+    if (pessoa !== 'todos') url += `&pessoa=${encodeURIComponent(pessoa)}`;
+    if (tipo !== 'todos') url += `&tipo=${encodeURIComponent(tipo)}`;
+    const data = await fetch(url).then(r=>r.json());
+    dadosTransacoes = data;
+    document.getElementById('tx-sub').textContent = (data.transacoes||[]).length + ' lançamentos · ' + fmt(data.total);
+    if (!data.transacoes?.length) { document.getElementById('tx-content').innerHTML = '<div class="empty">Nenhum lançamento encontrado</div>'; return; }
+    document.getElementById('tx-content').innerHTML = data.transacoes.map(tx => `
+      <div class="tx-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="tx-icon" style="background:${catColor(tx.categoria)};color:${catTextColor(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
+          <div>
+            <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
+            <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · <span class="badge ${tx.tipo==='Parcelado'?'bblue':'bgray'}">${tx.tipo}</span></p>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
+          <p style="font-size:11px;color:#999">${tx.responsavel} · ${tx.categoria}</p>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { document.getElementById('tx-content').innerHTML = '<div class="empty">Erro ao carregar</div>'; }
+}
+
+async function loadRelatorio() {
+  try {
+    const data = await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
+    document.getElementById('rel-metrics').innerHTML = `
+      <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmtK(data.media)}</p><p class="metric-sub">últimos ${mesesRel} meses</p></div>
+      <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmtK(data.maiorMes?.total||0)}</p></div>
+      <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:16px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral ? Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100) : 0}% do total</p></div>
+    `;
+
+    if (charts.relEvol) charts.relEvol.destroy();
+    charts.relEvol = new Chart(document.getElementById('rel-evol-chart'), {
       type: 'bar',
       data: {
-        labels: proj.map(p => p.nomeMes),
-        datasets: [{ data: proj.map(p => p.total), backgroundColor: ['#85B7EB', '#B5D4F4', '#B5D4F4', '#B5D4F4'], borderRadius: 4, borderSkipped: false }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#999' } },
-          y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#999', callback: v => fmtK(v) } }
-        }
-      }
-    });
-
-    const scoreList = document.getElementById('score-list');
-    scoreList.innerHTML = cats.slice(0, 7).map(([cat, val]) => {
-      const lim = budgets[cat];
-      const pct = lim ? Math.round((val / lim) * 100) : null;
-      const bc = pct !== null ? badgeClass(pct) : '';
-      return `
-        <div class="row" style="padding: 5px 0;">
-          <span style="font-size: 12px;">${cat}</span>
-          ${pct !== null ? `<span class="badge ${bc}">${pct}%</span>` : '<span style="font-size:12px; color:#bbb;">sem budget</span>'}
-        </div>
-      `;
-    }).join('');
-
-    const evolucao = resumo.evolucao || [];
-    if (charts.evol) charts.evol.destroy();
-    charts.evol = new Chart(document.getElementById('evolucaoChart'), {
-      type: 'line',
-      data: {
-        labels: evolucao.map(e => e.mes),
+        labels: (data.evolucao||[]).map(e=>e.mes),
         datasets: [{
-          data: evolucao.map(e => e.total),
-          borderColor: '#378ADD', backgroundColor: 'rgba(55,138,221,0.08)',
-          fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#378ADD', borderWidth: 2
+          data: (data.evolucao||[]).map(e=>e.total),
+          backgroundColor: (data.evolucao||[]).map((e,i,arr) => i===arr.length-1 ? '#378ADD' : '#B5D4F4'),
+          borderRadius: 4, borderSkipped: false
         }]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#999' } },
-          y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#999', callback: v => fmtK(v) } }
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtK(v)}}
         }
       }
     });
 
-  } catch (e) {
-    console.error('Erro ao carregar dashboard:', e);
-  }
+    const totalGeral = data.totalGeral || 1;
+    const topCats = Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const maxVal = topCats[0]?.[1] || 1;
+    document.getElementById('rel-categorias').innerHTML = topCats.map(([cat,val]) => `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px">${cat}</span>
+          <span style="font-size:12px;font-weight:500">${fmtK(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalGeral*100)}%</span></span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxVal*100)}%;background:#85B7EB"></div></div>
+      </div>
+    `).join('');
+
+    const evolucao = data.evolucao || [];
+    const cats = data.todasCategorias?.slice(0,5) || [];
+    document.getElementById('rel-comparativo').innerHTML = `
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
+              ${evolucao.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${cats.map(cat => `
+              <tr>
+                <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500">${cat}</td>
+                ${evolucao.map((e,i) => {
+                  const val = e.porCategoria?.[cat] || 0;
+                  const prev = i > 0 ? (evolucao[i-1].porCategoria?.[cat]||0) : null;
+                  const diff = prev !== null ? Math.round((val-prev)/Math.max(prev,1)*100) : null;
+                  return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea">
+                    ${val > 0 ? fmtK(val) : '<span style="color:#ddd">—</span>'}
+                    ${diff !== null && val > 0 ? `<span class="badge ${diff > 20 ? 'br' : diff > 0 ? 'ba' : 'bg'}" style="margin-left:4px">${diff > 0 ? '+' : ''}${diff}%</span>` : ''}
+                  </td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch(e) { console.error('Erro relatório:', e); }
+}
+
+function setMesesRel(n, el) {
+  mesesRel = n;
+  document.querySelectorAll('#page-relatorios .fbtn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadRelatorio();
 }
 </script>
 </body>
