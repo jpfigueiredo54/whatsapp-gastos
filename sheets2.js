@@ -57,13 +57,11 @@ function calcularCicloFatura(diaFechamento) {
   let inicioMes, inicioAno, fimMes, fimAno;
 
   if (diaHoje >= diaFechamento) {
-    // Estamos depois do fechamento — ciclo atual vai até o próximo mês
     inicioMes = mesHoje;
     inicioAno = anoHoje;
     fimMes = mesHoje === 11 ? 0 : mesHoje + 1;
     fimAno = mesHoje === 11 ? anoHoje + 1 : anoHoje;
   } else {
-    // Ainda não fechou — ciclo começou no mês passado
     inicioMes = mesHoje === 0 ? 11 : mesHoje - 1;
     inicioAno = mesHoje === 0 ? anoHoje - 1 : anoHoje;
     fimMes = mesHoje;
@@ -77,12 +75,15 @@ function calcularCicloFatura(diaFechamento) {
   return { inicio, fim, diasRestantes };
 }
 
+function formatarData(d) {
+  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+}
+
 async function getFaturas() {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  // Lê aba Cartões
   const resCartoes = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "Cartões!A:C",
@@ -90,7 +91,6 @@ async function getFaturas() {
 
   const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
 
-  // Lê aba Gastos
   const resGastos = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "Gastos!A:G",
@@ -98,7 +98,6 @@ async function getFaturas() {
 
   const gastos = (resGastos.data.values || []).slice(1);
 
-  // Lê aba Parcelas
   const resParcelas = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "Parcelas!A:H",
@@ -112,17 +111,13 @@ async function getFaturas() {
     return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
   };
 
-  let msg = `💳 Faturas em aberto\n${"─".repeat(25)}\n\n`;
+  let msg = `🧾 Faturas em aberto\n${"─".repeat(25)}\n\n`;
 
   for (const cartao of cartoes) {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
     const { inicio, fim, diasRestantes } = calcularCicloFatura(diaFechamento);
 
-    const dataFimFormatada = fim.toLocaleDateString("pt-BR", { day: "2d", month: "2d" }).replace(/(\d+)\/(\d+)\/\d+/, "$1/$2");
-    const fechaEm = fim.toLocaleDateString("pt-BR", { day: "numeric", month: "numeric" });
-
-    // Soma gastos do período para esse cartão
     const totalGastos = gastos
       .filter(row => {
         if (!row[0] || !row[5]) return false;
@@ -133,7 +128,6 @@ async function getFaturas() {
       })
       .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
 
-    // Soma parcelas abertas desse cartão
     const totalParcelas = parcelas
       .filter(row => {
         const cartaoParcela = (row[3] || "").toLowerCase();
@@ -146,10 +140,10 @@ async function getFaturas() {
     const totalFatura = totalGastos + totalParcelas;
 
     msg += `💳 *${nomeCartao}*\n`;
-    msg += `📅 Fecha em ${fechaEm} (${diasRestantes} dias)\n`;
+    msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} (${diasRestantes} dias)\n`;
     msg += `🛒 Gastos: R$ ${formatarValor(totalGastos)}\n`;
     msg += `🔄 Parcelas: R$ ${formatarValor(totalParcelas)}\n`;
-    msg += `💰 Total fatura: R$ ${formatarValor(totalFatura)}\n\n`;
+    msg += `💰 Total: R$ ${formatarValor(totalFatura)}\n\n`;
   }
 
   return msg.trim();
