@@ -117,7 +117,8 @@ app.post("/webhook", async (req, res) => {
       const valorNumerico = parseFloat(expense.valor.replace(",", "."));
       const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
       await appendToSheet(expense, pessoa);
-      let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor_parcela || expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+      const tipo = expense.parcelado ? "Parcelado" : "À vista";
+      let reply = `✅ Lançamento atualizado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor_parcela || expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`;
       if (alerta) reply += `\n\n${alerta}`;
       reply += `\n\n${fraseAleatoria()}`;
       return twimlReply(reply);
@@ -131,9 +132,10 @@ app.post("/webhook", async (req, res) => {
         const alerta = await verificarAlertaBudget(expense.categoria, valorNumerico);
         await appendToSheet(expense, pessoa);
         if (expense.parcelado) await appendParcela(expense, pessoa);
+        const tipo = expense.parcelado ? "Parcelado" : "À vista";
         let reply = expense.parcelado
-          ? `✅ Parcelamento registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
-          : `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+          ? `✅ Parcelamento registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n📌 Parcelado\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
+          : `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 À vista`;
         if (alerta) reply += `\n\n${alerta}`;
         reply += `\n\n${fraseAleatoria()}`;
         return twimlReply(reply);
@@ -169,9 +171,10 @@ app.post("/webhook", async (req, res) => {
 
     pendentes[from] = expense;
 
+    const tipo = expense.parcelado ? "Parcelado" : "À vista";
     const preview = expense.parcelado
-      ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`
-      : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}`;
+      ? `💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`
+      : `💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 ${tipo}`;
 
     return twimlReply(`📋 Confirmar gasto?\n\n${preview}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
 
