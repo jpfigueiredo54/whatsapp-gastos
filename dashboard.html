@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sidebar{width:210px;background:#1a1a1a;padding:1.5rem 1rem;flex-shrink:0;display:flex;flex-direction:column}
 .logo{color:#fff;font-size:15px;font-weight:500;margin-bottom:2rem;display:flex;align-items:center;gap:8px}
 .logo-icon{width:28px;height:28px;background:#FAC775;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#412402}
-.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:rgba(255,255,255,0.55);cursor:pointer;margin-bottom:2px;transition:all 0.15s}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:rgba(255,255,255,0.55);cursor:pointer;margin-bottom:2px}
 .nav-item:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06)}
 .nav-item.active{background:rgba(255,255,255,0.12);color:#fff}
 .nav-item i{font-size:16px}
@@ -35,7 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar-left p{font-size:12px;color:#999;margin-top:2px}
 .filters{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .fsel{padding:6px 10px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer;outline:none}
-.fbtn{padding:6px 12px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer;transition:all 0.15s}
+.fbtn{padding:6px 12px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer}
 .fbtn:hover{background:#f5f5f0}
 .fbtn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.25rem}
@@ -60,7 +60,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
 .row:last-child{border-bottom:none}
 .tab-bar{display:flex;gap:3px;background:#f0f0ea;padding:3px;border-radius:8px;margin-bottom:1rem;width:fit-content}
-.tab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:#888;transition:all 0.15s}
+.tab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:#888}
 .tab.active{background:#fff;color:#1a1a1a;font-weight:500}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;background:#f0f0ea;color:#555;cursor:pointer}
 .chip.active{background:#1a1a1a;color:#fff}
@@ -68,11 +68,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tx-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
 .tx-row:last-child{border-bottom:none}
 .tx-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
 .loading-msg{text-align:center;padding:2rem;color:#aaa;font-size:14px}
 .up{color:#A32D2D}
 .down{color:#3B6D11}
 .empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+.spinner{text-align:center;padding:3rem;color:#bbb;font-size:13px}
 </style>
 </head>
 <body>
@@ -114,11 +114,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <p id="ov-sub">carregando...</p>
           </div>
           <div class="filters">
-            <select class="fsel" id="ov-mes" onchange="loadOverview()"></select>
-            <select class="fsel" id="ov-cartao" onchange="loadOverview()">
+            <select class="fsel" id="ov-mes" onchange="onMesChange()"></select>
+            <select class="fsel" id="ov-cartao" onchange="renderOverview()">
               <option value="todos">Todos os cartões</option>
             </select>
-            <select class="fsel" id="ov-pessoa" onchange="loadOverview()">
+            <select class="fsel" id="ov-pessoa" onchange="renderOverview()">
               <option value="todos">Todas as pessoas</option>
             </select>
           </div>
@@ -132,9 +132,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="grid2">
           <div class="card">
             <p class="stitle">Gastos por categoria
-              <span>
-                <span class="chip active" onclick="setCatFiltro('todos',this)" style="margin-right:4px">Todos</span>
-                <span class="chip" onclick="setCatFiltro('À vista',this)" style="margin-right:4px">À vista</span>
+              <span style="display:flex;gap:4px">
+                <span class="chip active" onclick="setCatFiltro('todos',this)">Todos</span>
+                <span class="chip" onclick="setCatFiltro('À vista',this)">À vista</span>
                 <span class="chip" onclick="setCatFiltro('Parcelado',this)">Parcelado</span>
               </span>
             </p>
@@ -162,7 +162,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="topbar">
           <div class="topbar-left"><h1>Faturas em aberto</h1><p id="fat-sub">—</p></div>
           <div class="filters">
-            <select class="fsel" id="fat-cartao" onchange="loadFaturas()">
+            <select class="fsel" id="fat-cartao" onchange="renderFaturas()">
               <option value="todos">Todos os cartões</option>
             </select>
           </div>
@@ -190,14 +190,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <div class="grid3" id="par-metrics"></div>
         <div class="grid2e">
-          <div class="card">
-            <p class="stitle">Por cartão (mensal)</p>
-            <div id="par-cartoes"></div>
-          </div>
-          <div class="card">
-            <p class="stitle">Projeção próximos meses</p>
-            <div id="par-projecao"></div>
-          </div>
+          <div class="card"><p class="stitle">Por cartão (mensal)</p><div id="par-cartoes"></div></div>
+          <div class="card"><p class="stitle">Projeção próximos meses</p><div id="par-projecao"></div></div>
         </div>
         <div class="card">
           <p class="stitle">Lista de parcelas</p>
@@ -210,17 +204,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="topbar">
           <div class="topbar-left"><h1>Lançamentos</h1><p id="tx-sub">—</p></div>
           <div class="filters">
-            <select class="fsel" id="tx-mes" onchange="loadTransacoes()"></select>
-            <select class="fsel" id="tx-cartao" onchange="loadTransacoes()">
+            <select class="fsel" id="tx-mes" onchange="onTxMesChange()"></select>
+            <select class="fsel" id="tx-cartao" onchange="renderTransacoes()">
               <option value="todos">Todos os cartões</option>
             </select>
-            <select class="fsel" id="tx-pessoa" onchange="loadTransacoes()">
+            <select class="fsel" id="tx-pessoa" onchange="renderTransacoes()">
               <option value="todos">Todas as pessoas</option>
             </select>
-            <select class="fsel" id="tx-tipo" onchange="loadTransacoes()">
+            <select class="fsel" id="tx-tipo" onchange="renderTransacoes()">
               <option value="todos">Todos os tipos</option>
               <option value="À vista">À vista</option>
               <option value="Parcelado">Parcelado</option>
+            </select>
+            <select class="fsel" id="tx-categoria" onchange="renderTransacoes()">
+              <option value="todos">Todas as categorias</option>
             </select>
           </div>
         </div>
@@ -243,12 +240,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="grid2e">
           <div class="card">
             <p class="stitle">Evolução mensal</p>
-            <div style="position:relative;height:200px"><canvas id="rel-evol-chart" role="img" aria-label="Evolução mensal de gastos"></canvas></div>
+            <div style="position:relative;height:200px"><canvas id="rel-evol-chart" role="img" aria-label="Evolução mensal"></canvas></div>
           </div>
-          <div class="card">
-            <p class="stitle">Top categorias</p>
-            <div id="rel-categorias"></div>
-          </div>
+          <div class="card"><p class="stitle">Top categorias</p><div id="rel-categorias"></div></div>
         </div>
         <div class="card">
           <p class="stitle">Comparativo por categoria</p>
@@ -264,10 +258,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SENHA = 'lolosfinance';
-let dadosResumo = null, dadosParcelas = null, dadosFaturas = null, dadosTransacoes = null;
+
+// Cache global — carregado uma vez
+let cache = {
+  resumo: null,
+  parcelas: null,
+  faturas: null,
+  transacoes: null,      // todas as transações do mês selecionado
+  todasTransacoes: null, // todas sem filtro de mês (para tx page)
+  relatorio: null,
+};
+
 let catFiltroTipo = 'todos';
 let mesesRel = 6;
 let charts = {};
+let txMesAtual = null;
 
 function login() {
   if (document.getElementById('senha-input').value === SENHA) {
@@ -286,350 +291,338 @@ function logout() {
 }
 
 function fmt(v) {
-  if (isNaN(v) || v === null || v === undefined) return 'R$ 0,00';
-  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+  if (isNaN(v)||v===null||v===undefined) return 'R$ 0,00';
+  return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function fmtK(v) {
-  if (isNaN(v) || v === null) return 'R$ 0';
-  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'k';
-  return 'R$ ' + Math.round(v);
+  if (isNaN(v)||v===null) return 'R$ 0';
+  if (v>=1000) return 'R$ '+(v/1000).toFixed(1).replace('.',',')+' k';
+  return 'R$ '+Math.round(v);
 }
 
-function pctClass(pct) {
-  if (pct >= 100) return 'br';
-  if (pct >= 80) return 'ba';
-  return 'bg';
-}
-
-function barColor(pct) {
-  if (pct >= 100) return '#F09595';
-  if (pct >= 80) return '#EF9F27';
-  return '#5DCAA5';
-}
+function pctClass(pct) { return pct>=100?'br':pct>=80?'ba':'bg'; }
+function barColor(pct) { return pct>=100?'#F09595':pct>=80?'#EF9F27':'#5DCAA5'; }
 
 function catIcon(cat) {
-  const m = {alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',fármacia:'ti-pill',mercado:'ti-building-store'};
-  return m[(cat||'').toLowerCase()] || 'ti-receipt';
+  const m={alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',fármacia:'ti-pill',mercado:'ti-building-store'};
+  return m[(cat||'').toLowerCase()]||'ti-receipt';
 }
-
-function catColor(cat) {
-  const m = {alimentação:'#EAF3DE',restaurante:'#FAEEDA',transporte:'#E6F1FB',saúde:'#FCEBEB',lazer:'#FBEAF0',compras:'#E1F5EE',viagem:'#EEEDFE',moradia:'#F1EFE8',educação:'#E6F1FB',pets:'#FAEEDA',academia:'#EAF3DE'};
-  return m[(cat||'').toLowerCase()] || '#F1EFE8';
+function catBg(cat) {
+  const m={alimentação:'#EAF3DE',restaurante:'#FAEEDA',transporte:'#E6F1FB',saúde:'#FCEBEB',lazer:'#FBEAF0',compras:'#E1F5EE',viagem:'#EEEDFE',moradia:'#F1EFE8',educação:'#E6F1FB',pets:'#FAEEDA',academia:'#EAF3DE'};
+  return m[(cat||'').toLowerCase()]||'#F1EFE8';
 }
-
-function catTextColor(cat) {
-  const m = {alimentação:'#3B6D11',restaurante:'#854F0B',transporte:'#185FA5',saúde:'#A32D2D',lazer:'#993556',compras:'#085041',viagem:'#3C3489',moradia:'#5F5E5A',educação:'#185FA5',pets:'#854F0B',academia:'#3B6D11'};
-  return m[(cat||'').toLowerCase()] || '#5F5E5A';
+function catFg(cat) {
+  const m={alimentação:'#3B6D11',restaurante:'#854F0B',transporte:'#185FA5',saúde:'#A32D2D',lazer:'#993556',compras:'#085041',viagem:'#3C3489',moradia:'#5F5E5A',educação:'#185FA5',pets:'#854F0B',academia:'#3B6D11'};
+  return m[(cat||'').toLowerCase()]||'#5F5E5A';
 }
 
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  const navMap = {overview:0,faturas:1,parcelas:2,transacoes:3,relatorios:4};
-  document.querySelectorAll('.nav-item')[navMap[id]]?.classList.add('active');
-
-  if (id === 'faturas') loadFaturas();
-  if (id === 'parcelas') loadParcelas();
-  if (id === 'transacoes') loadTransacoes();
-  if (id === 'relatorios') loadRelatorio();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const idx={overview:0,faturas:1,parcelas:2,transacoes:3,relatorios:4};
+  document.querySelectorAll('.nav-item')[idx[id]]?.classList.add('active');
+  if (id==='relatorios'&&!cache.relatorio) loadRelatorio();
 }
 
-function getMesAtual() { return new Date().getMonth(); }
-function getAnoAtual() { return new Date().getFullYear(); }
+function getMesAno(selId) {
+  const val=document.getElementById(selId)?.value||'';
+  const [m,a]=val.split('|');
+  return {mes:parseInt(m),ano:parseInt(a)};
+}
 
-function populateMesSelect(selId, defaultMes, defaultAno) {
-  const sel = document.getElementById(selId);
-  sel.innerHTML = '';
-  const agora = new Date();
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
-    const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-    const opt = document.createElement('option');
-    opt.value = d.getMonth() + '|' + d.getFullYear();
-    opt.textContent = label;
-    if (d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) opt.selected = true;
+function populateMes(selId) {
+  const sel=document.getElementById(selId);
+  sel.innerHTML='';
+  const agora=new Date();
+  for(let i=11;i>=0;i--) {
+    const d=new Date(agora.getFullYear(),agora.getMonth()-i,1);
+    const opt=document.createElement('option');
+    opt.value=d.getMonth()+'|'+d.getFullYear();
+    opt.textContent=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    if(i===0) opt.selected=true;
     sel.appendChild(opt);
   }
 }
 
 async function initDashboard() {
-  populateMesSelect('ov-mes');
-  populateMesSelect('tx-mes');
+  populateMes('ov-mes');
+  populateMes('tx-mes');
 
+  // Carrega tudo em paralelo de uma vez
+  document.getElementById('ov-sub').textContent = 'carregando dados...';
   try {
-    const [resumo, parcelas, faturas] = await Promise.all([
+    const [resumo, parcelas, faturas, transacoes] = await Promise.all([
       fetch('/api/resumo').then(r=>r.json()),
       fetch('/api/parcelas').then(r=>r.json()),
       fetch('/api/faturas').then(r=>r.json()),
+      fetch('/api/transacoes').then(r=>r.json()),
     ]);
-    dadosResumo = resumo;
-    dadosParcelas = parcelas;
-    dadosFaturas = faturas;
 
+    cache.resumo = resumo;
+    cache.parcelas = parcelas;
+    cache.faturas = faturas;
+    cache.transacoes = transacoes.transacoes || [];
+    cache.todasTransacoes = transacoes.transacoes || [];
+
+    // Popula selects com dados reais
     const cartoes = [...new Set(faturas.cartoes.map(c=>c.nome))];
-    const pessoas = [...new Set(Object.keys(resumo.porPessoa || {}))];
+    const pessoas = [...new Set((transacoes.transacoes||[]).map(t=>t.responsavel).filter(Boolean))];
+    const categorias = [...new Set((transacoes.transacoes||[]).map(t=>t.categoria).filter(Boolean))].sort();
 
     ['ov-cartao','fat-cartao','par-cartao','tx-cartao'].forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel) return;
-      cartoes.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c; opt.textContent = c;
-        sel.appendChild(opt);
-      });
+      const sel=document.getElementById(id);
+      if(!sel) return;
+      cartoes.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
     });
 
     ['ov-pessoa','par-pessoa','tx-pessoa'].forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel) return;
-      pessoas.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p; opt.textContent = p;
-        sel.appendChild(opt);
-      });
+      const sel=document.getElementById(id);
+      if(!sel) return;
+      pessoas.forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+    });
+
+    const catSel = document.getElementById('tx-categoria');
+    categorias.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+
+    // Popula parcelas selects
+    const cartoesParc = [...new Set((parcelas.lista||[]).map(x=>x.cartao).filter(Boolean))];
+    const pessoasParc = [...new Set((parcelas.lista||[]).map(x=>x.responsavel).filter(Boolean))];
+    ['par-cartao'].forEach(id => {
+      const sel=document.getElementById(id);
+      cartoesParc.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+    });
+    ['par-pessoa'].forEach(id => {
+      const sel=document.getElementById(id);
+      pessoasParc.forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
     });
 
     renderOverview();
+    renderFaturas();
+    renderParcelasStatic();
+
   } catch(e) {
-    console.error('Erro ao inicializar:', e);
+    console.error('Erro init:', e);
+    document.getElementById('ov-sub').textContent = 'erro ao carregar dados';
   }
 }
 
-function getSelectedMes(selId) {
-  const val = document.getElementById(selId)?.value || '';
-  const [m, a] = val.split('|');
-  return { mes: parseInt(m), ano: parseInt(a) };
-}
-
-async function loadOverview() {
-  const {mes, ano} = getSelectedMes('ov-mes');
+// Muda mês — só recarrega resumo e transações do mês
+async function onMesChange() {
+  const {mes,ano} = getMesAno('ov-mes');
   try {
-    const resumo = await fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json());
-    dadosResumo = resumo;
+    const [resumo, transacoes] = await Promise.all([
+      fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json()),
+      fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json()),
+    ]);
+    cache.resumo = resumo;
+    cache.transacoes = transacoes.transacoes || [];
     renderOverview();
   } catch(e) { console.error(e); }
 }
 
+async function onTxMesChange() {
+  const {mes,ano} = getMesAno('tx-mes');
+  try {
+    const data = await fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json());
+    cache.todasTransacoes = data.transacoes || [];
+    renderTransacoes();
+  } catch(e) { console.error(e); }
+}
+
 function renderOverview() {
-  if (!dadosResumo || !dadosParcelas || !dadosFaturas) return;
-  const r = dadosResumo, p = dadosParcelas, f = dadosFaturas;
-  const cartao = document.getElementById('ov-cartao')?.value || 'todos';
-  const pessoa = document.getElementById('ov-pessoa')?.value || 'todos';
+  const r = cache.resumo;
+  const p = cache.parcelas;
+  const f = cache.faturas;
+  if (!r||!p||!f) return;
 
-  const nomeMes = new Date().toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-  document.getElementById('ov-sub').textContent = nomeMes + ' · atualizado agora';
+  const cartao = document.getElementById('ov-cartao')?.value||'todos';
+  const pessoa = document.getElementById('ov-pessoa')?.value||'todos';
 
-  document.getElementById('ov-total').textContent = fmtK(r.total);
-  const pctVar = r.totalMesAnterior ? Math.round((r.total - r.totalMesAnterior) / r.totalMesAnterior * 100) : 0;
+  const nomeMes = new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('ov-sub').textContent = nomeMes+' · atualizado agora';
+
+  // Filtra transações localmente — sem request
+  let txs = cache.transacoes || [];
+  if (cartao!=='todos') txs = txs.filter(t=>t.cartao===cartao);
+  if (pessoa!=='todos') txs = txs.filter(t=>t.responsavel===pessoa);
+  if (catFiltroTipo!=='todos') txs = txs.filter(t=>t.tipo===catFiltroTipo);
+
+  // Calcula totais filtrados
+  const total = txs.reduce((a,t)=>a+t.valor,0);
+  const porCat = {};
+  const porPessoa = {};
+  txs.forEach(t => {
+    porCat[t.categoria] = (porCat[t.categoria]||0)+t.valor;
+    porPessoa[t.responsavel] = (porPessoa[t.responsavel]||0)+t.valor;
+  });
+
+  const displayTotal = (cartao==='todos'&&pessoa==='todos'&&catFiltroTipo==='todos') ? r.total : total;
+  document.getElementById('ov-total').textContent = fmtK(displayTotal);
+  const pctVar = r.totalMesAnterior ? Math.round((r.total-r.totalMesAnterior)/r.totalMesAnterior*100) : 0;
   const varEl = document.getElementById('ov-total-sub');
-  varEl.textContent = r.totalMesAnterior ? `${pctVar > 0 ? '↑' : '↓'} ${Math.abs(pctVar)}% vs mês anterior` : '';
-  varEl.className = 'metric-sub ' + (pctVar > 0 ? 'up' : 'down');
+  varEl.textContent = r.totalMesAnterior ? `${pctVar>0?'↑':'↓'} ${Math.abs(pctVar)}% vs mês anterior` : '';
+  varEl.className = 'metric-sub '+(pctVar>0?'up':'down');
 
   document.getElementById('ov-parcelas').textContent = fmtK(p.totalMensal);
-  document.getElementById('ov-parcelas-sub').textContent = p.quantidade + ' parcelas em aberto';
+  document.getElementById('ov-parcelas-sub').textContent = p.quantidade+' parcelas em aberto';
   document.getElementById('ov-restante').textContent = fmtK(p.totalRestante);
 
-  const score = parseFloat(r.score || 0);
-  document.getElementById('ov-score').textContent = score.toFixed(1) + ' / 10';
-  document.getElementById('ov-score-sub').textContent = score >= 9 ? 'Excelente' : score >= 7 ? 'Bom' : score >= 5 ? 'Regular' : score >= 3 ? 'Atenção' : 'Crítico';
+  const score = parseFloat(r.score||0);
+  document.getElementById('ov-score').textContent = score.toFixed(1)+' / 10';
+  document.getElementById('ov-score-sub').textContent = score>=9?'Excelente':score>=7?'Bom':score>=5?'Regular':score>=3?'Atenção':'Crítico';
 
-  const budgets = r.budgets || {};
-  let cats = Object.entries(r.porCategoria || {}).sort((a,b) => b[1]-a[1]);
-  if (catFiltroTipo !== 'todos') {
-    // filtro aplicado via transações — simplifica mostrando todas com label
-  }
-  document.getElementById('ov-categorias').innerHTML = cats.slice(0,8).map(([cat, val]) => {
+  const budgets = r.budgets||{};
+  const cats = Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('ov-categorias').innerHTML = cats.slice(0,8).map(([cat,val]) => {
     const lim = budgets[cat];
     const pct = lim ? Math.round((val/lim)*100) : null;
     return `<div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:3px">
         <span style="font-size:12px;color:#444">${cat}</span>
-        <span style="font-size:12px;font-weight:500">${fmtK(val)} ${pct !== null ? `<span class="badge ${pctClass(pct)}">${pct}%</span>` : ''}</span>
+        <span style="font-size:12px;font-weight:500">${fmtK(val)} ${pct!==null?`<span class="badge ${pctClass(pct)}">${pct}%</span>`:''}</span>
       </div>
-      <div class="progress-bg"><div class="progress-fill" style="width:${pct !== null ? Math.min(pct,100) : 50}%;background:${pct !== null ? barColor(pct) : '#85B7EB'}"></div></div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${pct!==null?Math.min(pct,100):50}%;background:${pct!==null?barColor(pct):'#85B7EB'}"></div></div>
     </div>`;
-  }).join('');
+  }).join('')||'<div class="empty">Nenhum dado</div>';
 
+  // Faturas mini — filtro local
   let fatFiltered = f.cartoes;
-  if (cartao !== 'todos') fatFiltered = fatFiltered.filter(c => c.nome === cartao);
+  if (cartao!=='todos') fatFiltered = fatFiltered.filter(c=>c.nome===cartao);
   document.getElementById('ov-faturas-mini').innerHTML = fatFiltered.map(c => {
     const pct = c.limite ? Math.round((c.total/c.limite)*100) : null;
     return `<div style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
         <span style="font-size:12px;font-weight:500">${c.nome}</span>
-        ${pct !== null ? `<span class="badge ${pctClass(pct)}">${pct}%</span>` : ''}
+        ${pct!==null?`<span class="badge ${pctClass(pct)}">${pct}%</span>`:''}
       </div>
-      <div style="font-size:11px;color:#999;margin-bottom:3px">${c.limite ? fmt(c.total) + ' / ' + fmt(c.limite) : fmt(c.total)} · ${c.diasRestantes}d</div>
-      <div class="progress-bg"><div class="progress-fill" style="width:${pct !== null ? Math.min(pct,100) : 0}%;background:${pct !== null ? barColor(pct) : '#85B7EB'}"></div></div>
+      <div style="font-size:11px;color:#999;margin-bottom:3px">${c.limite?fmt(c.total)+' / '+fmt(c.limite):fmt(c.total)} · ${c.diasRestantes}d</div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${pct!==null?Math.min(pct,100):0}%;background:${pct!==null?barColor(pct):'#85B7EB'}"></div></div>
     </div>`;
   }).join('');
 
-  let pessoasData = Object.entries(r.porPessoa || {}).sort((a,b)=>b[1]-a[1]);
-  if (pessoa !== 'todos') pessoasData = pessoasData.filter(([p]) => p === pessoa);
-  const totalPessoas = pessoasData.reduce((a,[,v])=>a+v,0);
-  const pessoaColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
+  // Pessoas — filtro local
+  let pessoasData = Object.entries(porPessoa).sort((a,b)=>b[1]-a[1]);
+  const totalP = pessoasData.reduce((a,[,v])=>a+v,0);
+  const pColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
   document.getElementById('ov-pessoas').innerHTML = pessoasData.map(([p,v],i) => `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <div style="width:28px;height:28px;border-radius:50%;background:${pessoaColors[i]}22;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:${pessoaColors[i]};flex-shrink:0">${p.slice(0,2).toUpperCase()}</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:${pColors[i]}22;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:${pColors[i]};flex-shrink:0">${p.slice(0,2).toUpperCase()}</div>
       <div style="flex:1">
         <div style="display:flex;justify-content:space-between;margin-bottom:2px">
           <span style="font-size:12px">${p}</span>
-          <span style="font-size:12px;font-weight:500">${fmtK(v)} <span style="color:#aaa;font-weight:400">${totalPessoas ? Math.round(v/totalPessoas*100) : 0}%</span></span>
+          <span style="font-size:12px;font-weight:500">${fmtK(v)} <span style="color:#aaa;font-weight:400">${totalP?Math.round(v/totalP*100):0}%</span></span>
         </div>
-        <div class="progress-bg"><div class="progress-fill" style="width:${totalPessoas ? Math.round(v/totalPessoas*100) : 0}%;background:${pessoaColors[i]}"></div></div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${totalP?Math.round(v/totalP*100):0}%;background:${pColors[i]}"></div></div>
       </div>
     </div>
   `).join('');
 
-  loadRecentTransacoes();
-}
-
-async function loadRecentTransacoes() {
-  const {mes, ano} = getSelectedMes('ov-mes');
-  const cartao = document.getElementById('ov-cartao')?.value || 'todos';
-  const pessoa = document.getElementById('ov-pessoa')?.value || 'todos';
-  try {
-    let url = `/api/transacoes?mes=${mes}&ano=${ano}`;
-    if (cartao !== 'todos') url += `&cartao=${encodeURIComponent(cartao)}`;
-    if (pessoa !== 'todos') url += `&pessoa=${encodeURIComponent(pessoa)}`;
-    const data = await fetch(url).then(r=>r.json());
-    const txs = (data.transacoes || []).slice(0,6);
-    if (txs.length === 0) { document.getElementById('ov-transacoes').innerHTML = '<div class="empty">Nenhum lançamento encontrado</div>'; return; }
-    document.getElementById('ov-transacoes').innerHTML = txs.map(tx => `
-      <div class="tx-row">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="tx-icon" style="background:${catColor(tx.categoria)};color:${catTextColor(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
-          <div>
-            <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
-            <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · ${tx.tipo}</p>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
-          <p style="font-size:11px;color:#999">${tx.responsavel}</p>
+  // Últimas transações filtradas localmente
+  const ultimas = txs.slice(0,6);
+  document.getElementById('ov-transacoes').innerHTML = ultimas.length ? ultimas.map(tx=>`
+    <div class="tx-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="tx-icon" style="background:${catBg(tx.categoria)};color:${catFg(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
+        <div>
+          <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
+          <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · ${tx.tipo}</p>
         </div>
       </div>
-    `).join('');
-  } catch(e) { console.error(e); }
+      <div style="text-align:right">
+        <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
+        <p style="font-size:11px;color:#999">${tx.responsavel}</p>
+      </div>
+    </div>
+  `).join('') : '<div class="empty">Nenhum lançamento</div>';
 }
 
 function setCatFiltro(tipo, el) {
   catFiltroTipo = tipo;
-  document.querySelectorAll('#page-overview .chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#page-overview .chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   renderOverview();
 }
 
-function loadFaturas() {
-  if (!dadosFaturas) return;
-  const cartao = document.getElementById('fat-cartao')?.value || 'todos';
-  let fat = dadosFaturas.cartoes;
-  if (cartao !== 'todos') fat = fat.filter(c => c.nome === cartao);
-
-  document.getElementById('fat-sub').textContent = fat.length + ' cartões · ' + new Date().toLocaleDateString('pt-BR', {month:'long',year:'numeric'});
-
+function renderFaturas() {
+  if (!cache.faturas) return;
+  const cartao = document.getElementById('fat-cartao')?.value||'todos';
+  let fat = cache.faturas.cartoes;
+  if (cartao!=='todos') fat = fat.filter(c=>c.nome===cartao);
+  document.getElementById('fat-sub').textContent = fat.length+' cartões';
   document.getElementById('fat-content').innerHTML = fat.map(c => {
     const pct = c.limite ? Math.round((c.total/c.limite)*100) : null;
-    const alerta = pct !== null ? (pct >= 100 ? '🔴 Limite ultrapassado. Controle-se.' : pct >= 80 ? '🟠 Ritmo elevado. Risco de estourar.' : c.pctCiclo && pct - c.pctCiclo >= 20 ? '🟡 Consumo acima do esperado para o ciclo.' : '✅ Consumo dentro do esperado.') : '';
+    const alerta = pct!==null ? (pct>=100?'🔴 Limite ultrapassado. Controle-se.':pct>=80?'🟠 Ritmo elevado. Risco de estourar.':c.pctCiclo&&pct-c.pctCiclo>=20?'🟡 Consumo acima do esperado.':'✅ Consumo dentro do esperado.') : '';
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
         <div>
           <p style="font-size:16px;font-weight:500">${c.nome}</p>
           <p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias até fechar</p>
         </div>
-        ${pct !== null ? `<span class="badge ${pctClass(pct)}" style="font-size:13px;padding:4px 10px">${pct}%</span>` : ''}
+        ${pct!==null?`<span class="badge ${pctClass(pct)}" style="font-size:13px;padding:4px 10px">${pct}%</span>`:''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">
         <div class="metric"><p class="metric-label">À vista</p><p class="metric-value" style="font-size:16px">${fmt(c.aVista)}</p></div>
         <div class="metric"><p class="metric-label">Parcelas</p><p class="metric-value" style="font-size:16px">${fmt(c.parcelas)}</p></div>
-        <div class="metric"><p class="metric-label">Total</p><p class="metric-value" style="font-size:16px">${fmt(c.total)}${c.limite ? ` <span style="font-size:12px;color:#aaa">/ ${fmt(c.limite)}</span>` : ''}</p></div>
+        <div class="metric"><p class="metric-label">Total</p><p class="metric-value" style="font-size:16px">${fmt(c.total)}${c.limite?` <span style="font-size:12px;color:#aaa">/ ${fmt(c.limite)}</span>`:''}</p></div>
       </div>
-      ${pct !== null ? `<div class="progress-bg" style="height:8px;margin-bottom:8px"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor(pct)}"></div></div>` : ''}
-      ${alerta ? `<p style="font-size:12px;color:#666;margin-top:8px">${alerta}</p>` : ''}
+      ${pct!==null?`<div class="progress-bg" style="height:8px;margin-bottom:8px"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor(pct)}"></div></div>`:''}
+      ${alerta?`<p style="font-size:12px;color:#666;margin-top:4px">${alerta}</p>`:''}
     </div>`;
   }).join('');
 }
 
-async function loadParcelas() {
-  if (!dadosParcelas) {
-    dadosParcelas = await fetch('/api/parcelas').then(r=>r.json());
-  }
-  const p = dadosParcelas;
-
-  const cartoes = [...new Set((p.lista||[]).map(x=>x.cartao).filter(Boolean))];
-  const pessoas = [...new Set((p.lista||[]).map(x=>x.responsavel).filter(Boolean))];
-
-  ['par-cartao'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="todos">Todos os cartões</option>';
-    cartoes.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-    sel.value = cur;
-  });
-
-  ['par-pessoa'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="todos">Todas as pessoas</option>';
-    pessoas.forEach(pp => { const o = document.createElement('option'); o.value=pp; o.textContent=pp; sel.appendChild(o); });
-    sel.value = cur;
-  });
-
-  document.getElementById('par-sub').textContent = p.quantidade + ' parcelas em aberto';
-
+function renderParcelasStatic() {
+  if (!cache.parcelas) return;
+  const p = cache.parcelas;
+  document.getElementById('par-sub').textContent = p.quantidade+' parcelas em aberto';
   document.getElementById('par-metrics').innerHTML = `
     <div class="metric"><p class="metric-label">Compromisso mensal</p><p class="metric-value">${fmtK(p.totalMensal)}</p><p class="metric-sub">soma das parcelas</p></div>
     <div class="metric"><p class="metric-label">Total restante</p><p class="metric-value">${fmtK(p.totalRestante)}</p><p class="metric-sub">até quitação</p></div>
-    <div class="metric"><p class="metric-label">Qtd em aberto</p><p class="metric-value">${p.quantidade}</p><p class="metric-sub">parcelas ativas</p></div>
+    <div class="metric"><p class="metric-label">Em aberto</p><p class="metric-value">${p.quantidade}</p><p class="metric-sub">parcelas ativas</p></div>
   `;
-
   const porCartao = {};
-  (p.lista||[]).forEach(x => { porCartao[x.cartao] = (porCartao[x.cartao]||0) + x.valorParcela; });
-  const cartaoColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
-  document.getElementById('par-cartoes').innerHTML = Object.entries(porCartao).sort((a,b)=>b[1]-a[1]).map(([c,v],i) => `
+  (p.lista||[]).forEach(x=>{ porCartao[x.cartao]=(porCartao[x.cartao]||0)+x.valorParcela; });
+  const pColors = ['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
+  document.getElementById('par-cartoes').innerHTML = Object.entries(porCartao).sort((a,b)=>b[1]-a[1]).map(([c,v],i)=>`
     <div class="row">
-      <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${cartaoColors[i]||'#888'};display:inline-block"></span><span style="font-size:13px">${c}</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${pColors[i]||'#888'};display:inline-block"></span><span style="font-size:13px">${c}</span></div>
       <span style="font-size:13px;font-weight:500">${fmt(v)}</span>
     </div>
   `).join('');
-
-  document.getElementById('par-projecao').innerHTML = (p.projecao||[]).map((x,i) => `
+  document.getElementById('par-projecao').innerHTML = (p.projecao||[]).map((x,i)=>`
     <div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:3px">
         <span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span>
         <span style="font-size:12px">${fmt(x.total)}</span>
       </div>
-      <div class="progress-bg"><div class="progress-fill" style="width:${p.totalMensal ? Math.round(x.total/p.totalMensal*100) : 0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${p.totalMensal?Math.round(x.total/p.totalMensal*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
     </div>
   `).join('');
-
   renderParcelas();
 }
 
 function renderParcelas() {
-  if (!dadosParcelas) return;
-  const cartao = document.getElementById('par-cartao')?.value || 'todos';
-  const pessoa = document.getElementById('par-pessoa')?.value || 'todos';
-  const ordem = document.getElementById('par-ordem')?.value || 'valor';
-  let lista = [...(dadosParcelas.lista||[])];
-  if (cartao !== 'todos') lista = lista.filter(x => x.cartao === cartao);
-  if (pessoa !== 'todos') lista = lista.filter(x => x.responsavel === pessoa);
-  if (ordem === 'restantes') lista.sort((a,b) => b.restantes - a.restantes);
-  else if (ordem === 'nome') lista.sort((a,b) => a.descricao.localeCompare(b.descricao));
-  else lista.sort((a,b) => b.valorParcela - a.valorParcela);
-
-  if (lista.length === 0) { document.getElementById('par-lista').innerHTML = '<div class="empty">Nenhuma parcela encontrada</div>'; return; }
-
-  document.getElementById('par-lista').innerHTML = lista.map(x => {
-    const pct = Math.round((x.parcelasPagas/x.totalParcelas)*100);
+  if (!cache.parcelas) return;
+  const cartao = document.getElementById('par-cartao')?.value||'todos';
+  const pessoa = document.getElementById('par-pessoa')?.value||'todos';
+  const ordem = document.getElementById('par-ordem')?.value||'valor';
+  let lista = [...(cache.parcelas.lista||[])];
+  if (cartao!=='todos') lista=lista.filter(x=>x.cartao===cartao);
+  if (pessoa!=='todos') lista=lista.filter(x=>x.responsavel===pessoa);
+  if (ordem==='restantes') lista.sort((a,b)=>b.restantes-a.restantes);
+  else if (ordem==='nome') lista.sort((a,b)=>a.descricao.localeCompare(b.descricao));
+  else lista.sort((a,b)=>b.valorParcela-a.valorParcela);
+  if (!lista.length) { document.getElementById('par-lista').innerHTML='<div class="empty">Nenhuma parcela encontrada</div>'; return; }
+  document.getElementById('par-lista').innerHTML = lista.map(x=>{
+    const pct=Math.round((x.parcelasPagas/x.totalParcelas)*100);
     return `<div class="row" style="align-items:flex-start;padding:10px 0">
       <div>
         <p style="font-size:13px;font-weight:500">${x.descricao}</p>
         <p style="font-size:11px;color:#999;margin-top:2px">${x.cartao} · ${x.responsavel} · ${x.categoria}</p>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-          <div style="width:80px;"><div class="progress-bg"><div class="progress-fill" style="width:${pct}%;background:#85B7EB"></div></div></div>
+          <div style="width:80px"><div class="progress-bg"><div class="progress-fill" style="width:${pct}%;background:#85B7EB"></div></div></div>
           <span style="font-size:11px;color:#999">${x.parcelasPagas}/${x.totalParcelas} pagas</span>
         </div>
       </div>
@@ -641,120 +634,101 @@ function renderParcelas() {
   }).join('');
 }
 
-async function loadTransacoes() {
-  const {mes, ano} = getSelectedMes('tx-mes');
-  const cartao = document.getElementById('tx-cartao')?.value || 'todos';
-  const pessoa = document.getElementById('tx-pessoa')?.value || 'todos';
-  const tipo = document.getElementById('tx-tipo')?.value || 'todos';
-  document.getElementById('tx-content').innerHTML = '<div class="loading-msg">Carregando...</div>';
-  try {
-    let url = `/api/transacoes?mes=${mes}&ano=${ano}`;
-    if (cartao !== 'todos') url += `&cartao=${encodeURIComponent(cartao)}`;
-    if (pessoa !== 'todos') url += `&pessoa=${encodeURIComponent(pessoa)}`;
-    if (tipo !== 'todos') url += `&tipo=${encodeURIComponent(tipo)}`;
-    const data = await fetch(url).then(r=>r.json());
-    dadosTransacoes = data;
-    document.getElementById('tx-sub').textContent = (data.transacoes||[]).length + ' lançamentos · ' + fmt(data.total);
-    if (!data.transacoes?.length) { document.getElementById('tx-content').innerHTML = '<div class="empty">Nenhum lançamento encontrado</div>'; return; }
-    document.getElementById('tx-content').innerHTML = data.transacoes.map(tx => `
-      <div class="tx-row">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="tx-icon" style="background:${catColor(tx.categoria)};color:${catTextColor(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
-          <div>
-            <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
-            <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · <span class="badge ${tx.tipo==='Parcelado'?'bblue':'bgray'}">${tx.tipo}</span></p>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
-          <p style="font-size:11px;color:#999">${tx.responsavel} · ${tx.categoria}</p>
+function renderTransacoes() {
+  let txs = cache.todasTransacoes || [];
+  const cartao = document.getElementById('tx-cartao')?.value||'todos';
+  const pessoa = document.getElementById('tx-pessoa')?.value||'todos';
+  const tipo = document.getElementById('tx-tipo')?.value||'todos';
+  const cat = document.getElementById('tx-categoria')?.value||'todos';
+  if (cartao!=='todos') txs=txs.filter(t=>t.cartao===cartao);
+  if (pessoa!=='todos') txs=txs.filter(t=>t.responsavel===pessoa);
+  if (tipo!=='todos') txs=txs.filter(t=>t.tipo===tipo);
+  if (cat!=='todos') txs=txs.filter(t=>t.categoria===cat);
+  const total = txs.reduce((a,t)=>a+t.valor,0);
+  document.getElementById('tx-sub').textContent = txs.length+' lançamentos · '+fmt(total);
+  if (!txs.length) { document.getElementById('tx-content').innerHTML='<div class="empty">Nenhum lançamento encontrado</div>'; return; }
+  document.getElementById('tx-content').innerHTML = txs.map(tx=>`
+    <div class="tx-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="tx-icon" style="background:${catBg(tx.categoria)};color:${catFg(tx.categoria)}"><i class="ti ${catIcon(tx.categoria)}"></i></div>
+        <div>
+          <p style="font-size:13px;font-weight:500">${tx.descricao}</p>
+          <p style="font-size:11px;color:#999">${tx.data} · ${tx.cartao} · <span class="badge ${tx.tipo==='Parcelado'?'bblue':'bgray'}">${tx.tipo}</span></p>
         </div>
       </div>
-    `).join('');
-  } catch(e) { document.getElementById('tx-content').innerHTML = '<div class="empty">Erro ao carregar</div>'; }
+      <div style="text-align:right">
+        <p style="font-size:13px;font-weight:500">${fmt(tx.valor)}</p>
+        <p style="font-size:11px;color:#999">${tx.responsavel} · ${tx.categoria}</p>
+      </div>
+    </div>
+  `).join('');
 }
 
 async function loadRelatorio() {
   try {
     const data = await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
-    document.getElementById('rel-metrics').innerHTML = `
-      <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmtK(data.media)}</p><p class="metric-sub">últimos ${mesesRel} meses</p></div>
-      <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmtK(data.maiorMes?.total||0)}</p></div>
-      <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:16px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral ? Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100) : 0}% do total</p></div>
-    `;
-
-    if (charts.relEvol) charts.relEvol.destroy();
-    charts.relEvol = new Chart(document.getElementById('rel-evol-chart'), {
-      type: 'bar',
-      data: {
-        labels: (data.evolucao||[]).map(e=>e.mes),
-        datasets: [{
-          data: (data.evolucao||[]).map(e=>e.total),
-          backgroundColor: (data.evolucao||[]).map((e,i,arr) => i===arr.length-1 ? '#378ADD' : '#B5D4F4'),
-          borderRadius: 4, borderSkipped: false
-        }]
-      },
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
-        scales:{
-          x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},
-          y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtK(v)}}
-        }
-      }
-    });
-
-    const totalGeral = data.totalGeral || 1;
-    const topCats = Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    const maxVal = topCats[0]?.[1] || 1;
-    document.getElementById('rel-categorias').innerHTML = topCats.map(([cat,val]) => `
-      <div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:12px">${cat}</span>
-          <span style="font-size:12px;font-weight:500">${fmtK(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalGeral*100)}%</span></span>
-        </div>
-        <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxVal*100)}%;background:#85B7EB"></div></div>
-      </div>
-    `).join('');
-
-    const evolucao = data.evolucao || [];
-    const cats = data.todasCategorias?.slice(0,5) || [];
-    document.getElementById('rel-comparativo').innerHTML = `
-      <div style="overflow-x:auto">
-        <table style="width:100%;font-size:12px;border-collapse:collapse">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
-              ${evolucao.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${cats.map(cat => `
-              <tr>
-                <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500">${cat}</td>
-                ${evolucao.map((e,i) => {
-                  const val = e.porCategoria?.[cat] || 0;
-                  const prev = i > 0 ? (evolucao[i-1].porCategoria?.[cat]||0) : null;
-                  const diff = prev !== null ? Math.round((val-prev)/Math.max(prev,1)*100) : null;
-                  return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea">
-                    ${val > 0 ? fmtK(val) : '<span style="color:#ddd">—</span>'}
-                    ${diff !== null && val > 0 ? `<span class="badge ${diff > 20 ? 'br' : diff > 0 ? 'ba' : 'bg'}" style="margin-left:4px">${diff > 0 ? '+' : ''}${diff}%</span>` : ''}
-                  </td>`;
-                }).join('')}
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-  } catch(e) { console.error('Erro relatório:', e); }
+    cache.relatorio = data;
+    renderRelatorio(data);
+  } catch(e) { console.error(e); }
 }
 
-function setMesesRel(n, el) {
+function renderRelatorio(data) {
+  document.getElementById('rel-metrics').innerHTML = `
+    <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmtK(data.media)}</p><p class="metric-sub">últimos ${mesesRel} meses</p></div>
+    <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value" style="font-size:16px">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmtK(data.maiorMes?.total||0)}</p></div>
+    <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:16px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral?Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100):0}% do total</p></div>
+  `;
+  if (charts.relEvol) charts.relEvol.destroy();
+  charts.relEvol = new Chart(document.getElementById('rel-evol-chart'),{
+    type:'bar',
+    data:{
+      labels:(data.evolucao||[]).map(e=>e.mes),
+      datasets:[{data:(data.evolucao||[]).map(e=>e.total),backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),borderRadius:4,borderSkipped:false}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtK(v)}}}}
+  });
+  const totalG = data.totalGeral||1;
+  const tops = Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxV = tops[0]?.[1]||1;
+  document.getElementById('rel-categorias').innerHTML = tops.map(([cat,val])=>`
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:12px">${cat}</span>
+        <span style="font-size:12px;font-weight:500">${fmtK(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalG*100)}%</span></span>
+      </div>
+      <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
+    </div>
+  `).join('');
+  const evol = data.evolucao||[];
+  const cats = (data.todasCategorias||[]).slice(0,5);
+  document.getElementById('rel-comparativo').innerHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
+          ${evol.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
+        </tr></thead>
+        <tbody>${cats.map(cat=>`
+          <tr>${['<td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500">'+cat+'</td>',
+            ...evol.map((e,i)=>{
+              const val=e.porCategoria?.[cat]||0;
+              const prev=i>0?(evol[i-1].porCategoria?.[cat]||0):null;
+              const diff=prev!==null?Math.round((val-prev)/Math.max(prev,1)*100):null;
+              return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea">${val>0?fmtK(val):'<span style="color:#ddd">—</span>'}${diff!==null&&val>0?`<span class="badge ${diff>20?'br':diff>0?'ba':'bg'}" style="margin-left:4px">${diff>0?'+':''}${diff}%</span>`:''}</td>`;
+            })].join('')}</tr>
+        `).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function setMesesRel(n, el) {
   mesesRel = n;
-  document.querySelectorAll('#page-relatorios .fbtn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#page-relatorios .fbtn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  loadRelatorio();
+  cache.relatorio = null;
+  await loadRelatorio();
 }
 </script>
 </body>
