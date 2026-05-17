@@ -8,6 +8,41 @@ function getAuth() {
   });
 }
 
+async function getCategorias() {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Categorias!A:A",
+  });
+
+  const rows = res.data.values || [];
+  return rows.slice(1).map(r => r[0]).filter(Boolean);
+}
+
+async function adicionarCategoria(categoria) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const categorias = await getCategorias();
+  if (categorias.map(c => c.toLowerCase()).includes(categoria.toLowerCase())) {
+    return false; // já existe
+  }
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "Categorias!A:A",
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [[categoria]] },
+  });
+
+  return true;
+}
+
 async function appendToSheet(expense, pessoa) {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -190,9 +225,9 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
   if (percentual >= 100) {
     return `⚠️ Limite de ${categoria} estourado!\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)`;
   } else if (percentual >= 80) {
-    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")} (${percentual.toFixed(0)}%)`;
+    return `⚠️ Atenção! Você usou ${percentual.toFixed(0)}% do budget de ${categoria}.\nGasto: R$ ${gastoTotal.toFixed(2).replace(".", ",")} de R$ ${limite.toFixed(2).replace(".", ",")}`;
   }
   return null;
 }
 
-module.exports = { appendToSheet, appendParcela, registrarParcelasMes, getBudgets, getGastosPorMes, getGastosMesCategoria, verificarAlertaBudget };
+module.exports = { appendToSheet, appendParcela, registrarParcelasMes, getBudgets, getGastosPorMes, getGastosMesCategoria, verificarAlertaBudget, getCategorias, adicionarCategoria };
