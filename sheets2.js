@@ -98,13 +98,6 @@ async function getFaturas() {
 
   const gastos = (resGastos.data.values || []).slice(1);
 
-  const resParcelas = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Parcelas!A:H",
-  });
-
-  const parcelas = (resParcelas.data.values || []).slice(1);
-
   const parsearData = (str) => {
     const p = str.split("/");
     if (p.length < 3) return null;
@@ -118,32 +111,28 @@ async function getFaturas() {
     const diaFechamento = parseInt(cartao[2]);
     const { inicio, fim, diasRestantes } = calcularCicloFatura(diaFechamento);
 
-    const totalGastos = gastos
-      .filter(row => {
-        if (!row[0] || !row[5]) return false;
-        const d = parsearData(row[0]);
-        if (!d) return false;
-        const cartaoGasto = (row[5] || "").toLowerCase();
-        return cartaoGasto.includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
-      })
+    const gastosCartao = gastos.filter(row => {
+      if (!row[0] || !row[5]) return false;
+      const d = parsearData(row[0]);
+      if (!d) return false;
+      return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
+    });
+
+    const aVista = gastosCartao
+      .filter(row => !(row[3] || "").toLowerCase().includes("parcela"))
       .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
 
-    const totalParcelas = parcelas
-      .filter(row => {
-        const cartaoParcela = (row[3] || "").toLowerCase();
-        const totalP = parseInt(row[6] || "0");
-        const pagas = parseInt(row[7] || "0");
-        return cartaoParcela.includes(nomeCartao.toLowerCase()) && pagas < totalP;
-      })
+    const parcelas = gastosCartao
+      .filter(row => (row[3] || "").toLowerCase().includes("parcela"))
       .reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
 
-    const totalFatura = totalGastos + totalParcelas;
+    const total = aVista + parcelas;
 
     msg += `💳 *${nomeCartao}*\n`;
     msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} (${diasRestantes} dias)\n`;
-    msg += `🛒 Gastos: R$ ${formatarValor(totalGastos)}\n`;
-    msg += `🔄 Parcelas: R$ ${formatarValor(totalParcelas)}\n`;
-    msg += `💰 Total: R$ ${formatarValor(totalFatura)}\n\n`;
+    msg += `🛒 À vista: R$ ${formatarValor(aVista)}\n`;
+    msg += `🔄 Parcelas: R$ ${formatarValor(parcelas)}\n`;
+    msg += `💰 Total: R$ ${formatarValor(total)}\n\n`;
   }
 
   return msg.trim();
