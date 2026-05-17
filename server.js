@@ -1,7 +1,8 @@
 const express = require("express");
+const path = require("path");
 const { parseExpense } = require("./parser");
 const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -82,6 +83,40 @@ Corrige o último lançamento registrado por você.
 Mostra esta mensagem.`;
 
 app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
+
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "dashboard.html"));
+});
+
+app.get("/api/resumo", async (req, res) => {
+  try {
+    const data = await getApiResumo();
+    res.json(data);
+  } catch (err) {
+    console.error("Erro /api/resumo:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/faturas", async (req, res) => {
+  try {
+    const data = await getApiFaturas();
+    res.json(data);
+  } catch (err) {
+    console.error("Erro /api/faturas:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/parcelas", async (req, res) => {
+  try {
+    const data = await getApiParcelas();
+    res.json(data);
+  } catch (err) {
+    console.error("Erro /api/parcelas:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post("/parcelas/registrar", async (req, res) => {
   const secret = req.headers["x-cron-secret"];
