@@ -1,6 +1,6 @@
 const express = require("express");
 const { parseExpense } = require("./parser");
-const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget } = require("./sheets");
+const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
 const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento } = require("./sheets2");
 
 const app = express();
@@ -68,14 +68,18 @@ Lista todas as parcelas em aberto.
 🧾 */faturas*
 Fatura atual de cada cartão com dias restantes.
 
+🏷️ */categoria listar*
+Lista todas as categorias disponíveis.
+
+🏷️ */categoria adicionar [nome]*
+Adiciona uma nova categoria.
+Ex: /categoria adicionar Pets
+
 ✏️ */editar*
 Corrige o último lançamento registrado por você.
 
 ❓ */ajuda*
-Mostra esta mensagem.
-
-_Categorias disponíveis:_
-Alimentação, Transporte, Saúde, Lazer, Moradia, Compras, Educação, Viagem, Outro`;
+Mostra esta mensagem.`;
 
 app.get("/", (req, res) => res.send("WhatsApp → Sheets bot rodando ✅"));
 
@@ -158,6 +162,19 @@ app.post("/webhook", async (req, res) => {
     if (body.toLowerCase() === "/comparar") return twimlReply(await getComparativo());
     if (body.toLowerCase() === "/parcelas") return twimlReply(await getParcelasAbertas());
     if (body.toLowerCase() === "/faturas") return twimlReply(await getFaturas());
+
+    if (body.toLowerCase() === "/categoria listar") {
+      const categorias = await getCategorias();
+      return twimlReply(`🏷️ Categorias disponíveis:\n\n${categorias.map(c => `• ${c}`).join("\n")}`);
+    }
+
+    if (body.toLowerCase().startsWith("/categoria adicionar ")) {
+      const novaCategoria = body.slice(21).trim();
+      if (!novaCategoria) return twimlReply("❌ Informe o nome da categoria. Ex: /categoria adicionar Pets");
+      const adicionado = await adicionarCategoria(novaCategoria);
+      if (adicionado) return twimlReply(`✅ Categoria *${novaCategoria}* adicionada com sucesso!`);
+      return twimlReply(`⚠️ A categoria *${novaCategoria}* já existe.`);
+    }
 
     if (body.toLowerCase() === "/editar") {
       const ultimo = await getUltimoLancamento(pessoa);
