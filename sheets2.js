@@ -83,9 +83,9 @@ function formatarData(d) {
 }
 
 function alertaRitmo(pctGasto, pctCiclo) {
-  const diff = pctGasto - pctCiclo;
-  if (pctGasto >= 100) return `🔴 Ritmo de consumo elevado. Há risco de atingir o limite antes do fechamento da fatura.`;
-  if (diff >= 20) return `🟡 Consumo acima do esperado para este momento do ciclo. Recomenda-se cautela nos próximos gastos.`;
+  if (pctGasto >= 100) return `🔴 Limite ultrapassado. Você gastou mais do que havia planejado para este cartão. Controle-se.`;
+  if (pctGasto >= 80) return `🟠 Ritmo de consumo elevado. Há risco de atingir o limite antes do fechamento da fatura.`;
+  if (pctGasto - pctCiclo >= 20) return `🟡 Consumo acima do esperado para este momento do ciclo. Recomenda-se cautela nos próximos gastos.`;
   return `✅ Consumo dentro do esperado para o período.`;
 }
 
