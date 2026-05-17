@@ -120,7 +120,7 @@ async function getFaturas() {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
     const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
-    const { inicio, fim, diasDecorridos, diasRestantes, totalDias, pctCiclo } = calcularCicloFatura(diaFechamento);
+    const { inicio, fim, diasRestantes, pctCiclo } = calcularCicloFatura(diaFechamento);
 
     const gastosCartao = gastos.filter(row => {
       if (!row[0] || !row[5]) return false;
@@ -140,7 +140,7 @@ async function getFaturas() {
     const total = aVista + parcelas;
 
     msg += `💳 *${nomeCartao}*\n`;
-    msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} — dia ${diasDecorridos}/${totalDias}\n`;
+    msg += `📅 Ciclo: ${formatarData(inicio)} a ${formatarData(fim)} — ${diasRestantes} dias até o fechamento\n`;
     msg += `🛒 À vista: R$ ${formatarValor(aVista)}\n`;
     msg += `🔄 Parcelas: R$ ${formatarValor(parcelas)}\n`;
 
