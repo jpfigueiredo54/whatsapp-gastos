@@ -13,6 +13,8 @@ async function appendToSheet(expense, pessoa) {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
+  const tipo = expense.parcelado ? "Parcelado" : "À vista";
+
   const values = [[
     expense.data,
     expense.valor_parcela ? expense.valor_parcela.replace(".", ",") : expense.valor.replace(".", ","),
@@ -21,11 +23,12 @@ async function appendToSheet(expense, pessoa) {
     expense.metodo_pagamento,
     expense.cartao || "",
     pessoa || "",
+    tipo,
   ]];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values },
@@ -89,7 +92,7 @@ async function registrarParcelasMes() {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: "Gastos!A:G",
+      range: "Gastos!A:H",
       valueInputOption: "USER_ENTERED",
       insertDataOption: "INSERT_ROWS",
       requestBody: {
@@ -101,6 +104,7 @@ async function registrarParcelasMes() {
           metodo,
           cartao,
           pessoa,
+          "Parcelado",
         ]],
       },
     });
@@ -145,7 +149,7 @@ async function getGastosPorMes(mes, ano) {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Gastos!A:G",
+    range: "Gastos!A:H",
   });
 
   const rows = res.data.values || [];
