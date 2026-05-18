@@ -76,7 +76,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .row:last-child{border-bottom:none}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;background:#f0f0ea;color:#555;cursor:pointer}
 .chip.active{background:#1a1a1a;color:#fff}
-.chip-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
 .tx-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
 .tx-row:last-child{border-bottom:none}
 .tx-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
@@ -84,6 +83,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .up{color:#A32D2D}
 .down{color:#3B6D11}
 .empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+.fechamento-card{background:#fff;border:2px solid #EF9F27;border-radius:14px;padding:1.25rem;margin-bottom:1.25rem}
+.fechamento-card .fc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.fechamento-card .fc-icon{width:36px;height:36px;background:#FAEEDA;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fechamento-card .fc-icon i{font-size:18px;color:#854F0B}
+.fechamento-card .fc-close{background:none;border:none;cursor:pointer;color:#aaa;font-size:18px;padding:0;line-height:1}
+.fechamento-card .fc-cats{display:flex;flex-direction:column;gap:7px}
 @media(max-width:768px){
   .sidebar{display:none}
   .bottom-nav{display:block}
@@ -138,6 +143,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
           <button class="filter-toggle-btn" onclick="openSheet('sheet-overview')"><i class="ti ti-adjustments-horizontal" style="font-size:14px"></i> Filtros</button>
         </div>
+        <div id="fechamento-banner"></div>
         <div class="grid4">
           <div class="metric"><p class="metric-label">Total gasto</p><p class="metric-value" id="ov-total">—</p><p class="metric-sub" id="ov-total-sub">—</p></div>
           <div class="metric"><p class="metric-label">Parcelas</p><p class="metric-value" id="ov-parcelas">—</p><p class="metric-sub" id="ov-parcelas-sub">—</p></div>
@@ -317,6 +323,7 @@ let cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:
 let catFiltroTipo='todos';
 let mesesRel=6;
 let charts={};
+let fechamentoDismissed=false;
 
 function login(){
   if(document.getElementById('senha-input').value===SENHA){
@@ -431,6 +438,81 @@ function addOptions(selId,mobileSelId,items,defaultLabel){
   });
 }
 
+async function checkFechamentoBanner(){
+  const agora=new Date();
+  if(agora.getDate()!==1) return;
+  const key='fechamento_dismissed_'+agora.getFullYear()+'_'+agora.getMonth();
+  if(localStorage.getItem(key)) return;
+  try{
+    const data=await fetch('/api/fechamento-mes-anterior').then(r=>r.json());
+    if(!data) return;
+    renderFechamentoBanner(data, key);
+  }catch(e){ console.error('Erro fechamento banner:', e); }
+}
+
+function renderFechamentoBanner(data, key){
+  const varHtml = data.varPct!==null
+    ? `<p class="metric-value" style="font-size:17px;color:${data.varPct>0?'#A32D2D':'#3B6D11'}">${data.varPct>0?'↑':'↓'} ${Math.abs(data.varPct)}%</p>`
+    : '<p class="metric-value" style="font-size:17px;">—</p>';
+
+  const scoreColor = parseFloat(data.score)>=7?'#3B6D11':parseFloat(data.score)>=5?'#BA7517':'#A32D2D';
+
+  const pctBudgetHtml = data.pctBudget!==null
+    ? `<p class="metric-value" style="font-size:17px;color:${data.pctBudget>=100?'#A32D2D':data.pctBudget>=80?'#BA7517':'#3B6D11'}">${data.pctBudget}%</p>`
+    : '<p class="metric-value" style="font-size:17px;">—</p>';
+
+  const catsHtml = data.categorias.slice(0,5).map(c=>{
+    const pct=c.pct;
+    const cor=pct===null?'#85B7EB':pct>=100?'#F09595':pct>=80?'#EF9F27':'#5DCAA5';
+    const badge=pct!==null?`<span class="badge ${pctClass(pct)}">${pct}%</span>`:'';
+    return `<div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#444">${c.cat}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:70px;height:4px;background:#f0f0ea;border-radius:99px;overflow:hidden">
+          <div style="width:${pct!==null?Math.min(pct,100):0}%;height:100%;background:${cor};border-radius:99px"></div>
+        </div>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('fechamento-banner').innerHTML=`
+    <div class="fechamento-card">
+      <div class="fc-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="fc-icon"><i class="ti ti-calendar-stats" aria-hidden="true"></i></div>
+          <div>
+            <p style="font-size:14px;font-weight:500">Fechamento de ${data.nomeMes}</p>
+            <p style="font-size:12px;color:#999;margin-top:1px">Relatório automático do mês anterior</p>
+          </div>
+        </div>
+        <button class="fc-close" onclick="dismissFechamento('${key}')" aria-label="Fechar">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="grid4" style="margin-bottom:1rem">
+        <div class="metric"><p class="metric-label">Total gasto</p><p class="metric-value" style="font-size:17px">${fmtK(data.total)}</p></div>
+        <div class="metric"><p class="metric-label">vs mês ant.</p>${varHtml}</div>
+        <div class="metric"><p class="metric-label">Budget usado</p>${pctBudgetHtml}</div>
+        <div class="metric"><p class="metric-label">Score</p><p class="metric-value" style="font-size:17px;color:${scoreColor}">${data.score}/10</p></div>
+      </div>
+      <div style="border-top:0.5px solid #f0f0ea;padding-top:12px;margin-bottom:1rem">
+        <p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Por categoria</p>
+        <div class="fc-cats">${catsHtml}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="showPage('relatorios')" style="flex:1;padding:9px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">Ver relatório completo</button>
+        <button onclick="dismissFechamento('${key}')" style="padding:9px 16px;background:none;border:0.5px solid #d0d0c8;border-radius:8px;font-size:13px;cursor:pointer;color:#666">Dispensar</button>
+      </div>
+    </div>
+  `;
+}
+
+function dismissFechamento(key){
+  localStorage.setItem(key,'1');
+  document.getElementById('fechamento-banner').innerHTML='';
+}
+
 async function initDashboard(){
   populateMes('ov-mes','m-ov-mes');
   populateMes('tx-mes','m-tx-mes');
@@ -466,6 +548,7 @@ async function initDashboard(){
     renderOverview();
     renderFaturas();
     renderParcelasStatic();
+    checkFechamentoBanner();
   }catch(e){
     console.error('Erro init:',e);
     document.getElementById('ov-sub').textContent='erro ao carregar';
