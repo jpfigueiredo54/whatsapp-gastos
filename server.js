@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const { parseExpense } = require("./parser");
 const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getFds } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -69,8 +69,8 @@ Lista todas as parcelas em aberto.
 🧾 */faturas*
 Fatura atual de cada cartão com dias restantes.
 
-🗓️ */fds*
-Budget proporcional para o final de semana.
+📊 */ritmo*
+Quanto você pode gastar por dia até o fim do mês.
 
 🏷️ */categoria listar*
 Lista todas as categorias disponíveis.
@@ -190,7 +190,7 @@ app.post("/webhook", async (req, res) => {
     if (body.toLowerCase() === "/comparar") return twimlReply(await getComparativo());
     if (body.toLowerCase() === "/parcelas") return twimlReply(await getParcelasAbertas());
     if (body.toLowerCase() === "/faturas") return twimlReply(await getFaturas());
-    if (body.toLowerCase() === "/fds") return twimlReply(await getFds());
+    if (body.toLowerCase() === "/ritmo") return twimlReply(await getRitmo());
 
     if (body.toLowerCase() === "/categoria listar") {
       const categorias = await getCategorias();
