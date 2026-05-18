@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const { parseExpense } = require("./parser");
 const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -119,6 +119,11 @@ app.get("/api/relatorio", async (req, res) => {
     const { meses } = req.query;
     res.json(await getApiRelatorio(meses || 6));
   }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/fechamento-mes-anterior", async (req, res) => {
+  try { res.json(await getApiFechamentoMesAnterior()); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
