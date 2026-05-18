@@ -86,36 +86,55 @@ async function getRitmo() {
   const agora = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const ultimoDia = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
   const diasRestantes = ultimoDia - agora.getDate() + 1;
-
   if (diasRestantes <= 0) return "📅 Fim de mês — sem dias restantes para calcular.";
-
   const { porCategoria } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
   const budgets = await getBudgets();
-
   if (Object.keys(budgets).length === 0) return "⚠️ Nenhum budget configurado ainda.";
-
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long" });
-
   const budgetTotal = Object.values(budgets).reduce((a, b) => a + b, 0);
-  const gastoTotal = Object.entries(budgets).reduce((acc, [cat]) => {
-    return acc + (porCategoria[cat] || 0);
-  }, 0);
+  const gastoTotal = Object.entries(budgets).reduce((acc, [cat]) => acc + (porCategoria[cat] || 0), 0);
   const saldo = budgetTotal - gastoTotal;
   const ritmoDiario = saldo / diasRestantes;
   const emoji = saldo <= 0 ? "🔴" : saldo / budgetTotal < 0.2 ? "🟡" : "✅";
-
   let msg = `📊 Seu ritmo de gastos\n`;
   msg += `🗓️ ${diasRestantes} dias restantes em ${nomeMes}\n\n`;
   msg += `💰 Budget total: R$ ${formatarValor(budgetTotal)}\n`;
   msg += `💸 Gasto até agora: R$ ${formatarValor(gastoTotal)}\n`;
   msg += `${emoji} Saldo disponível: R$ ${formatarValor(Math.max(0, saldo))}\n`;
   msg += `📆 Ritmo diário: R$ ${formatarValor(Math.max(0, ritmoDiario))}\n`;
-
-  if (saldo <= 0) {
-    msg += `\n⚠️ Budget total estourado em R$ ${formatarValor(Math.abs(saldo))}.`;
-  }
-
+  if (saldo <= 0) msg += `\n⚠️ Budget total estourado em R$ ${formatarValor(Math.abs(saldo))}.`;
   return msg;
+}
+
+async function getApiFechamentoMesAnterior() {
+  const agora = new Date();
+  const mesAnterior = agora.getMonth() === 0 ? 11 : agora.getMonth() - 1;
+  const anoAnterior = agora.getMonth() === 0 ? agora.getFullYear() - 1 : agora.getFullYear();
+  const mesDoisAtras = mesAnterior === 0 ? 11 : mesAnterior - 1;
+  const anoDoisAtras = mesAnterior === 0 ? anoAnterior - 1 : anoAnterior;
+
+  const { porCategoria, total } = await getGastosPorMes(mesAnterior, anoAnterior);
+  const { total: totalAnterior } = await getGastosPorMes(mesDoisAtras, anoDoisAtras);
+  const budgets = await getBudgets();
+
+  if (total === 0) return null;
+
+  const score = calcularScore(porCategoria, budgets);
+  const budgetTotal = Object.values(budgets).reduce((a, b) => a + b, 0);
+  const pctBudget = budgetTotal > 0 ? Math.round((total / budgetTotal) * 100) : null;
+  const varPct = totalAnterior > 0 ? Math.round((total - totalAnterior) / totalAnterior * 100) : null;
+
+  const nomeMes = new Date(anoAnterior, mesAnterior, 1).toLocaleDateString("pt-BR", { month: "long" });
+
+  const categorias = Object.entries(porCategoria)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, val]) => {
+      const limite = budgets[cat];
+      const pct = limite ? Math.round((val / limite) * 100) : null;
+      return { cat, val, limite, pct };
+    });
+
+  return { nomeMes, total, totalAnterior, varPct, score, budgetTotal, pctBudget, categorias };
 }
 
 async function getFaturas() {
@@ -620,4 +639,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getUltimoLancamento, deletarUltimoLancamento };
