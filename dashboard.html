@@ -9,7 +9,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
-
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
 .login-card{background:#fff;border-radius:16px;padding:2.5rem;width:100%;max-width:340px;border:0.5px solid #e0e0d8}
 .login-card h1{font-size:20px;font-weight:500;margin-bottom:6px}
@@ -18,10 +17,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .login-card input:focus{border-color:#378ADD}
 .login-card button{width:100%;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}
 .login-error{font-size:12px;color:#E24B4A;margin-top:8px;display:none}
-
 #app{display:none;min-height:100vh}
 .layout{display:flex;min-height:100vh}
-
 .sidebar{width:210px;background:#1a1a1a;padding:1.5rem 1rem;flex-shrink:0;display:flex;flex-direction:column}
 .logo{color:#fff;font-size:15px;font-weight:500;margin-bottom:2rem;display:flex;align-items:center;gap:8px}
 .logo-icon{width:28px;height:28px;background:#FAC775;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#412402}
@@ -29,19 +26,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav-item:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06)}
 .nav-item.active{background:rgba(255,255,255,0.12);color:#fff}
 .nav-item i{font-size:16px}
-.nav-section{font-size:10px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.08em;padding:12px 10px 6px;margin-top:8px}
 .nav-bottom{margin-top:auto}
-
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;height:60px;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
 .bottom-nav-inner{display:flex;height:60px}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:10px;padding:8px 4px}
 .bnav-item i{font-size:20px}
 .bnav-item.active{color:#FAC775}
-
 .main{flex:1;padding:1.5rem;overflow-x:hidden}
 .page{display:none}
 .page.active{display:block}
-
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap}
 .topbar-left h1{font-size:18px;font-weight:500}
 .topbar-left p{font-size:12px;color:#999;margin-top:2px}
@@ -50,7 +43,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fbtn{padding:6px 12px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer}
 .fbtn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .filter-toggle-btn{display:none;padding:7px 12px;border-radius:8px;font-size:12px;border:0.5px solid #d0d0c8;background:#fff;color:#555;cursor:pointer;align-items:center;gap:6px}
-
 .filter-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;padding:1.5rem;z-index:200;box-shadow:0 -4px 24px rgba(0,0,0,0.12);max-height:80vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
 .filter-sheet.open{display:block}
 .filter-sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:199}
@@ -61,7 +53,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-group label{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px}
 .filter-group select{width:100%;padding:10px 12px;border:0.5px solid #d0d0c8;border-radius:8px;font-size:14px;outline:none;background:#fff}
 .filter-apply-btn{width:100%;padding:12px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px}
-
 .grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
 .grid2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:1.25rem}
@@ -93,7 +84,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .up{color:#A32D2D}
 .down{color:#3B6D11}
 .empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
-
 @media(max-width:768px){
   .sidebar{display:none}
   .bottom-nav{display:block}
@@ -138,7 +128,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <div class="main">
 
-      <!-- VISÃO GERAL -->
       <div class="page active" id="page-overview">
         <div class="topbar">
           <div class="topbar-left"><h1>Visão geral</h1><p id="ov-sub">carregando...</p></div>
@@ -177,7 +166,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
-      <!-- FATURAS -->
       <div class="page" id="page-faturas">
         <div class="topbar">
           <div class="topbar-left"><h1>Faturas</h1><p id="fat-sub">—</p></div>
@@ -189,7 +177,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="fat-content"><div class="loading-msg">Carregando...</div></div>
       </div>
 
-      <!-- PARCELAS -->
       <div class="page" id="page-parcelas">
         <div class="topbar">
           <div class="topbar-left"><h1>Parcelas</h1><p id="par-sub">—</p></div>
@@ -212,7 +199,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="card"><p class="stitle">Lista de parcelas</p><div id="par-lista"></div></div>
       </div>
 
-      <!-- LANÇAMENTOS -->
       <div class="page" id="page-transacoes">
         <div class="topbar">
           <div class="topbar-left"><h1>Lançamentos</h1><p id="tx-sub">—</p></div>
@@ -232,7 +218,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="card"><div id="tx-content"><div class="loading-msg">Carregando...</div></div></div>
       </div>
 
-      <!-- RELATÓRIOS -->
       <div class="page" id="page-relatorios">
         <div class="topbar">
           <div class="topbar-left"><h1>Relatórios</h1><p>análise histórica</p></div>
@@ -256,7 +241,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <div class="bottom-nav-inner">
       <div class="bnav-item active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i><span>Início</span></div>
@@ -267,12 +251,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- FILTER SHEETS -->
   <div class="filter-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
 
   <div class="filter-sheet" id="sheet-overview">
     <h3>Filtros <span onclick="closeSheet()">Fechar</span></h3>
-    <div class="filter-group"><label>Mês</label><select id="m-ov-mes" onchange="syncFilter('ov-mes','m-ov-mes')"></select></div>
+    <div class="filter-group"><label>Mês</label><select id="m-ov-mes" onchange="syncAndRun('ov-mes','m-ov-mes',onMesChange)"></select></div>
     <div class="filter-group"><label>Cartão</label><select id="m-ov-cartao" onchange="syncFilter('ov-cartao','m-ov-cartao')"><option value="todos">Todos</option></select></div>
     <div class="filter-group"><label>Pessoa</label><select id="m-ov-pessoa" onchange="syncFilter('ov-pessoa','m-ov-pessoa')"><option value="todos">Todas</option></select></div>
     <button class="filter-apply-btn" onclick="closeSheet();renderOverview()">Aplicar</button>
@@ -300,7 +283,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   <div class="filter-sheet" id="sheet-transacoes">
     <h3>Filtros <span onclick="closeSheet()">Fechar</span></h3>
-    <div class="filter-group"><label>Mês</label><select id="m-tx-mes" onchange="syncFilter('tx-mes','m-tx-mes');onTxMesChange()"></select></div>
+    <div class="filter-group"><label>Mês</label><select id="m-tx-mes" onchange="syncAndRun('tx-mes','m-tx-mes',onTxMesChange)"></select></div>
     <div class="filter-group"><label>Cartão</label><select id="m-tx-cartao" onchange="syncFilter('tx-cartao','m-tx-cartao')"><option value="todos">Todos</option></select></div>
     <div class="filter-group"><label>Pessoa</label><select id="m-tx-pessoa" onchange="syncFilter('tx-pessoa','m-tx-pessoa')"><option value="todos">Todas</option></select></div>
     <div class="filter-group"><label>Tipo</label>
@@ -330,7 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SENHA='lolosfinance';
-let cache={resumo:null,parcelas:null,faturas:null,transacoes:null,todasTransacoes:null};
+let cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:[]};
 let catFiltroTipo='todos';
 let mesesRel=6;
 let charts={};
@@ -364,10 +347,15 @@ function closeSheet(){
   document.querySelectorAll('.filter-sheet').forEach(s=>s.classList.remove('open'));
 }
 
-function syncFilter(mainId, mobileId){
+function syncFilter(mainId,mobileId){
   const main=document.getElementById(mainId);
   const mob=document.getElementById(mobileId);
   if(main&&mob) main.value=mob.value;
+}
+
+function syncAndRun(mainId,mobileId,fn){
+  syncFilter(mainId,mobileId);
+  fn();
 }
 
 function fmt(v){
@@ -406,21 +394,19 @@ function showPage(id){
   const i=idx[id];
   document.querySelectorAll('.nav-item')[i]?.classList.add('active');
   document.querySelectorAll('.bnav-item')[i]?.classList.add('active');
+  if(id==='transacoes') renderTransacoes();
   if(id==='relatorios'&&!cache.relatorio) loadRelatorio();
-  if(id==='relatorios'&&isMobile()){
-    document.getElementById('rel-period-mobile').style.display='flex';
-  }
+  if(id==='relatorios'&&isMobile()) document.getElementById('rel-period-mobile').style.display='flex';
 }
 
-function populateMes(selId, mobileSelId){
+function populateMes(selId,mobileSelId){
   const agora=new Date();
   const opts=[];
   for(let i=11;i>=0;i--){
     const d=new Date(agora.getFullYear(),agora.getMonth()-i,1);
     const val=d.getMonth()+'|'+d.getFullYear();
     const label=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-    const sel=i===0?'selected':'';
-    opts.push(`<option value="${val}" ${sel}>${label}</option>`);
+    opts.push(`<option value="${val}"${i===0?' selected':''}>${label}</option>`);
   }
   const html=opts.join('');
   document.getElementById(selId).innerHTML=html;
@@ -433,15 +419,15 @@ function getMesAno(selId){
   return{mes:parseInt(m),ano:parseInt(a)};
 }
 
-function addOptions(selId, mobileSelId, items, defaultLabel){
-  [selId, mobileSelId].forEach(id=>{
+function addOptions(selId,mobileSelId,items,defaultLabel){
+  [selId,mobileSelId].forEach(id=>{
     if(!id) return;
     const sel=document.getElementById(id);
     if(!sel) return;
     const cur=sel.value;
     sel.innerHTML=`<option value="todos">${defaultLabel}</option>`;
     items.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
-    if(cur) sel.value=cur;
+    try{sel.value=cur;}catch(e){}
   });
 }
 
@@ -480,7 +466,7 @@ async function initDashboard(){
     renderOverview();
     renderFaturas();
     renderParcelasStatic();
-  } catch(e){
+  }catch(e){
     console.error('Erro init:',e);
     document.getElementById('ov-sub').textContent='erro ao carregar';
   }
@@ -488,25 +474,30 @@ async function initDashboard(){
 
 async function onMesChange(){
   const {mes,ano}=getMesAno('ov-mes');
-  document.getElementById('m-ov-mes').value=document.getElementById('ov-mes').value;
-  const [resumo,tx]=await Promise.all([
-    fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json()),
-    fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json()),
-  ]);
-  cache.resumo=resumo;
-  cache.transacoes=tx.transacoes||[];
-  renderOverview();
+  try{
+    document.getElementById('m-ov-mes').value=document.getElementById('ov-mes').value;
+    const [resumo,tx]=await Promise.all([
+      fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json()),
+      fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json()),
+    ]);
+    cache.resumo=resumo;
+    cache.transacoes=tx.transacoes||[];
+    renderOverview();
+  }catch(e){console.error(e);}
 }
 
 async function onTxMesChange(){
   const {mes,ano}=getMesAno('tx-mes');
-  const data=await fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json());
-  cache.todasTransacoes=data.transacoes||[];
-  renderTransacoes();
+  try{
+    document.getElementById('m-tx-mes').value=document.getElementById('tx-mes').value;
+    const data=await fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json());
+    cache.todasTransacoes=data.transacoes||[];
+    renderTransacoes();
+  }catch(e){console.error(e);}
 }
 
 function renderOverview(){
-  const r=cache.resumo, p=cache.parcelas, f=cache.faturas;
+  const r=cache.resumo,p=cache.parcelas,f=cache.faturas;
   if(!r||!p||!f) return;
   const cartao=document.getElementById('ov-cartao')?.value||'todos';
   const pessoa=document.getElementById('ov-pessoa')?.value||'todos';
@@ -518,7 +509,7 @@ function renderOverview(){
   if(catFiltroTipo!=='todos') txs=txs.filter(t=>t.tipo===catFiltroTipo);
 
   const total=(cartao==='todos'&&pessoa==='todos'&&catFiltroTipo==='todos')?r.total:txs.reduce((a,t)=>a+t.valor,0);
-  const porCat={}, porPessoa={};
+  const porCat={},porPessoa={};
   txs.forEach(t=>{
     porCat[t.categoria]=(porCat[t.categoria]||0)+t.valor;
     porPessoa[t.responsavel]=(porPessoa[t.responsavel]||0)+t.valor;
@@ -613,7 +604,7 @@ function renderFaturas(){
   document.getElementById('fat-sub').textContent=fat.length+' cartões';
   document.getElementById('fat-content').innerHTML=fat.map(c=>{
     const pct=c.limite?Math.round((c.total/c.limite)*100):null;
-    const alerta=pct!==null?(pct>=100?'🔴 Limite ultrapassado. Controle-se.':pct>=80?'🟠 Ritmo elevado. Risco de estourar.':c.pctCiclo&&pct-c.pctCiclo>=20?'🟡 Consumo acima do esperado.':'✅ Consumo dentro do esperado.') :'';
+    const alerta=pct!==null?(pct>=100?'🔴 Limite ultrapassado. Controle-se.':pct>=80?'🟠 Ritmo elevado. Risco de estourar.':c.pctCiclo&&pct-c.pctCiclo>=20?'🟡 Consumo acima do esperado.':'✅ Consumo dentro do esperado.'):'';
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
         <div>
@@ -706,7 +697,7 @@ function renderTransacoes(){
   if(cat!=='todos') txs=txs.filter(t=>t.categoria===cat);
   const total=txs.reduce((a,t)=>a+t.valor,0);
   document.getElementById('tx-sub').textContent=txs.length+' lançamentos · '+fmt(total);
-  if(!txs.length){document.getElementById('tx-content').innerHTML='<div class="empty">Nenhum lançamento</div>';return;}
+  if(!txs.length){document.getElementById('tx-content').innerHTML='<div class="empty">Nenhum lançamento encontrado</div>';return;}
   document.getElementById('tx-content').innerHTML=txs.map(tx=>`
     <div class="tx-row">
       <div style="display:flex;align-items:center;gap:10px">
@@ -725,52 +716,54 @@ function renderTransacoes(){
 }
 
 async function loadRelatorio(){
-  const data=await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
-  cache.relatorio=data;
-  document.getElementById('rel-metrics').innerHTML=`
-    <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmtK(data.media)}</p><p class="metric-sub">${mesesRel} meses</p></div>
-    <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value" style="font-size:16px">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmtK(data.maiorMes?.total||0)}</p></div>
-    <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:16px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral?Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100):0}%</p></div>
-  `;
-  if(charts.relEvol) charts.relEvol.destroy();
-  charts.relEvol=new Chart(document.getElementById('rel-evol-chart'),{
-    type:'bar',
-    data:{labels:(data.evolucao||[]).map(e=>e.mes),datasets:[{data:(data.evolucao||[]).map(e=>e.total),backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),borderRadius:4,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtK(v)}}}}
-  });
-  const totalG=data.totalGeral||1;
-  const tops=Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const maxV=tops[0]?.[1]||1;
-  document.getElementById('rel-categorias').innerHTML=tops.map(([cat,val])=>`
-    <div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-        <span style="font-size:12px">${cat}</span>
-        <span style="font-size:12px;font-weight:500">${fmtK(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalG*100)}%</span></span>
+  try{
+    const data=await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
+    cache.relatorio=data;
+    document.getElementById('rel-metrics').innerHTML=`
+      <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmtK(data.media)}</p><p class="metric-sub">${mesesRel} meses</p></div>
+      <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value" style="font-size:16px">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmtK(data.maiorMes?.total||0)}</p></div>
+      <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:16px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral?Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100):0}%</p></div>
+    `;
+    if(charts.relEvol) charts.relEvol.destroy();
+    charts.relEvol=new Chart(document.getElementById('rel-evol-chart'),{
+      type:'bar',
+      data:{labels:(data.evolucao||[]).map(e=>e.mes),datasets:[{data:(data.evolucao||[]).map(e=>e.total),backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),borderRadius:4,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtK(v)}}}}
+    });
+    const totalG=data.totalGeral||1;
+    const tops=Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const maxV=tops[0]?.[1]||1;
+    document.getElementById('rel-categorias').innerHTML=tops.map(([cat,val])=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px">${cat}</span>
+          <span style="font-size:12px;font-weight:500">${fmtK(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalG*100)}%</span></span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
       </div>
-      <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
-    </div>
-  `).join('');
-  const evol=data.evolucao||[];
-  const cats=(data.todasCategorias||[]).slice(0,5);
-  document.getElementById('rel-comparativo').innerHTML=`
-    <div style="overflow-x:auto">
-      <table style="width:100%;font-size:12px;border-collapse:collapse;min-width:400px">
-        <thead><tr>
-          <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
-          ${evol.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
-        </tr></thead>
-        <tbody>${cats.map(cat=>`<tr>
-          <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500;white-space:nowrap">${cat}</td>
-          ${evol.map((e,i)=>{
-            const val=e.porCategoria?.[cat]||0;
-            const prev=i>0?(evol[i-1].porCategoria?.[cat]||0):null;
-            const diff=prev!==null?Math.round((val-prev)/Math.max(prev,1)*100):null;
-            return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea;white-space:nowrap">${val>0?fmtK(val):'<span style="color:#ddd">—</span>'}${diff!==null&&val>0?`<span class="badge ${diff>20?'br':diff>0?'ba':'bg'}" style="margin-left:4px">${diff>0?'+':''}${diff}%</span>`:''}</td>`;
-          }).join('')}
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
+    `).join('');
+    const evol=data.evolucao||[];
+    const cats=(data.todasCategorias||[]).slice(0,5);
+    document.getElementById('rel-comparativo').innerHTML=`
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:12px;border-collapse:collapse;min-width:400px">
+          <thead><tr>
+            <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
+            ${evol.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
+          </tr></thead>
+          <tbody>${cats.map(cat=>`<tr>
+            <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500;white-space:nowrap">${cat}</td>
+            ${evol.map((e,i)=>{
+              const val=e.porCategoria?.[cat]||0;
+              const prev=i>0?(evol[i-1].porCategoria?.[cat]||0):null;
+              const diff=prev!==null?Math.round((val-prev)/Math.max(prev,1)*100):null;
+              return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea;white-space:nowrap">${val>0?fmtK(val):'<span style="color:#ddd">—</span>'}${diff!==null&&val>0?`<span class="badge ${diff>20?'br':diff>0?'ba':'bg'}" style="margin-left:4px">${diff>0?'+':''}${diff}%</span>`:''}</td>`;
+            }).join('')}
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){console.error('Erro relatório:',e);}
 }
 
 async function setMesesRel(n,el){
