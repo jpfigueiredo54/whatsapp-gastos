@@ -82,6 +82,70 @@ function parseVal(str) {
   return parseFloat((str || "0").replace(/R\$\s*/g, "").replace(",", ".")) || 0;
 }
 
+async function getFds() {
+  const agora = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const diaSemana = agora.getDay();
+
+  // Quantos dias de FDS estão pela frente (incluindo hoje se for sáb ou dom)
+  let diasFds;
+  if (diaSemana === 6) diasFds = 2;      // sábado → sáb + dom
+  else if (diaSemana === 0) diasFds = 1; // domingo → só domingo
+  else diasFds = 2;                       // semana → próximo sáb + dom
+
+  const nomeFds = diaSemana === 0 ? "domingo" : diaSemana === 6 ? "sábado e domingo" : "final de semana (sáb + dom)";
+
+  // Dias restantes no mês a partir de hoje
+  const ultimoDia = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
+  const diasRestantes = ultimoDia - agora.getDate() + 1;
+
+  if (diasRestantes <= 0) return "📅 Fim de mês — sem dias restantes para calcular.";
+
+  const { porCategoria } = await getGastosPorMes(agora.getMonth(), agora.getFullYear());
+  const budgets = await getBudgets();
+
+  if (Object.keys(budgets).length === 0) return "⚠️ Nenhum budget configurado ainda.";
+
+  let msg = `🗓️ Budget para o ${nomeFds}\n`;
+  msg += `📊 ${diasRestantes} dias restantes no mês · ${diasFds} dias de FDS\n`;
+  msg += `${"─".repeat(25)}\n\n`;
+
+  let temAlerta = false;
+  let totalFds = 0;
+
+  Object.entries(budgets)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cat, limite]) => {
+      const gasto = porCategoria[cat] || 0;
+      const saldo = limite - gasto;
+      const pct = Math.round((gasto / limite) * 100);
+
+      if (saldo <= 0) {
+        msg += `🔴 *${cat}*: estourado (${pct}% usado)\n`;
+        msg += `   Saldo: -R$ ${formatarValor(Math.abs(saldo))}\n\n`;
+        temAlerta = true;
+      } else {
+        const budgetDiario = saldo / diasRestantes;
+        const budgetFds = budgetDiario * diasFds;
+        totalFds += budgetFds;
+        const emoji = pct >= 80 ? "🟡" : "🟢";
+        msg += `${emoji} *${cat}*\n`;
+        msg += `   FDS: R$ ${formatarValor(budgetFds)}\n`;
+        msg += `   Saldo mês: R$ ${formatarValor(saldo)} (${100 - pct}% livre)\n\n`;
+      }
+    });
+
+  msg += `${"─".repeat(25)}\n`;
+  msg += `💰 Total disponível no FDS: R$ ${formatarValor(totalFds)}\n\n`;
+
+  if (temAlerta) {
+    msg += `⚠️ Categorias estouradas não entram no cálculo.`;
+  } else {
+    msg += `✅ Se respeitar esses valores, fica dentro do planejado.`;
+  }
+
+  return msg;
+}
+
 async function getFaturas() {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
@@ -156,8 +220,8 @@ async function getApiResumo() {
   });
   const evolucao = [];
   for (let i = 5; i >= 0; i--) {
-    const m = mesAtual - i < 0 ? mesAtual - i + 12 : mesAtual - i;
-    const a = mesAtual - i < 0 ? anoAtual - 1 : anoAtual;
+    const m = (mesAtual - i + 12) % 12;
+    const a = anoAtual - (mesAtual - i < 0 ? 1 : 0);
     const { total: t } = await getGastosPorMes(m, a);
     const nomeMes = new Date(a, m, 1).toLocaleDateString("pt-BR", { month: "short" });
     evolucao.push({ mes: nomeMes, total: t });
@@ -171,9 +235,7 @@ async function getApiParcelas() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Parcelas!A:H" });
   const rows = res.data.values || [];
-  const abertas = rows.slice(1).filter(row => {
-    return parseInt(row[6] || "0") > parseInt(row[7] || "0");
-  });
+  const abertas = rows.slice(1).filter(row => parseInt(row[6] || "0") > parseInt(row[7] || "0"));
   const totalMensal = abertas.reduce((acc, row) => acc + parseFloat((row[1] || "0").replace(",", ".")), 0);
   const totalRestante = abertas.reduce((acc, row) => {
     const val = parseFloat((row[1] || "0").replace(",", "."));
@@ -306,8 +368,7 @@ async function getResumoMes() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
-  const mesAtual = agora.getMonth();
-  const anoAtual = agora.getFullYear();
+  const mesAtual = agora.getMonth(), anoAtual = agora.getFullYear();
   const gastosMes = rows.slice(1).filter(row => {
     if (!row[0]) return false;
     const partes = row[0].split("/");
@@ -354,8 +415,7 @@ async function getResumoCategoria(categoria) {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
   const agora = new Date();
-  const mesAtual = agora.getMonth();
-  const anoAtual = agora.getFullYear();
+  const mesAtual = agora.getMonth(), anoAtual = agora.getFullYear();
   const gastosMes = rows.slice(1).filter(row => {
     if (!row[0] || row[2]?.toLowerCase() !== categoria.toLowerCase()) return false;
     const partes = row[0].split("/");
@@ -376,9 +436,7 @@ async function getResumoCategoria(categoria) {
     msg += `💰 Total: R$ ${formatarValor(total)}\n`;
   }
   msg += `\n📋 Lançamentos:\n`;
-  gastosMes.forEach(row => {
-    msg += `• ${row[0]} — R$ ${formatarValor(parseVal(row[1]))} — ${row[3] || ""} (${row[6] || ""})\n`;
-  });
+  gastosMes.forEach(row => { msg += `• ${row[0]} — R$ ${formatarValor(parseVal(row[1]))} — ${row[3] || ""} (${row[6] || ""})\n`; });
   return msg;
 }
 
@@ -590,4 +648,4 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getFds, getUltimoLancamento, deletarUltimoLancamento };
