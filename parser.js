@@ -4,8 +4,7 @@ const { getCategorias } = require("./sheets");
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const today = () => {
-  const d = new Date();
-  return d.toLocaleDateString("pt-BR");
+  return new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 };
 
 async function parseExpense(message) {
@@ -28,7 +27,7 @@ Retorne APENAS um JSON válido com exatamente estas chaves:
 }
 
 Regras:
-- "data": use a data mencionada. Se não houver, use a data de hoje: ${today()}
+- "data": use a data mencionada na mensagem. Se não houver data, use a data de hoje: ${today()}
 - "valor": se parcelado, use o valor TOTAL (parcela x total). Se não parcelado, valor informado
 - "valor_parcela": se parcelado, valor de cada parcela. Senão null
 - "total_parcelas": número total de parcelas se mencionado. Senão null
