@@ -96,40 +96,23 @@ async function getRitmo() {
 
   const nomeMes = agora.toLocaleDateString("pt-BR", { month: "long" });
 
+  const budgetTotal = Object.values(budgets).reduce((a, b) => a + b, 0);
+  const gastoTotal = Object.entries(budgets).reduce((acc, [cat]) => {
+    return acc + (porCategoria[cat] || 0);
+  }, 0);
+  const saldo = budgetTotal - gastoTotal;
+  const ritmoDiario = saldo / diasRestantes;
+  const emoji = saldo <= 0 ? "🔴" : saldo / budgetTotal < 0.2 ? "🟡" : "✅";
+
   let msg = `📊 Seu ritmo de gastos\n`;
-  msg += `🗓️ ${diasRestantes} dias restantes em ${nomeMes}\n`;
-  msg += `${"─".repeat(25)}\n\n`;
+  msg += `🗓️ ${diasRestantes} dias restantes em ${nomeMes}\n\n`;
+  msg += `💰 Budget total: R$ ${formatarValor(budgetTotal)}\n`;
+  msg += `💸 Gasto até agora: R$ ${formatarValor(gastoTotal)}\n`;
+  msg += `${emoji} Saldo disponível: R$ ${formatarValor(Math.max(0, saldo))}\n`;
+  msg += `📆 Ritmo diário: R$ ${formatarValor(Math.max(0, ritmoDiario))}\n`;
 
-  let totalSaldo = 0;
-  let temEstourado = false;
-
-  Object.entries(budgets)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([cat, limite]) => {
-      const gasto = porCategoria[cat] || 0;
-      const saldo = limite - gasto;
-      const pct = Math.round((gasto / limite) * 100);
-
-      if (saldo <= 0) {
-        msg += `🔴 *${cat}*: estourado (${pct}% usado)\n`;
-        msg += `   Excesso: R$ ${formatarValor(Math.abs(saldo))}\n\n`;
-        temEstourado = true;
-      } else {
-        const ritmoDiario = saldo / diasRestantes;
-        totalSaldo += saldo;
-        const emoji = pct >= 80 ? "🟡" : "🟢";
-        msg += `${emoji} *${cat}*\n`;
-        msg += `   Saldo: R$ ${formatarValor(saldo)} (${100 - pct}% livre)\n`;
-        msg += `   Ritmo diário: R$ ${formatarValor(ritmoDiario)}\n\n`;
-      }
-    });
-
-  msg += `${"─".repeat(25)}\n`;
-  msg += `💰 Saldo total disponível: R$ ${formatarValor(totalSaldo)}\n`;
-  msg += `📆 Ritmo geral diário: R$ ${formatarValor(totalSaldo / diasRestantes)}\n`;
-
-  if (temEstourado) {
-    msg += `\n⚠️ Categorias estouradas não entram no cálculo.`;
+  if (saldo <= 0) {
+    msg += `\n⚠️ Budget total estourado em R$ ${formatarValor(Math.abs(saldo))}.`;
   }
 
   return msg;
