@@ -241,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="card"><p class="stitle">Evolução mensal</p><div style="position:relative;height:200px"><canvas id="rel-evol-chart" role="img" aria-label="Evolução mensal"></canvas></div></div>
           <div class="card"><p class="stitle">Top categorias</p><div id="rel-categorias"></div></div>
         </div>
-        <div class="card"><p class="stitle">Comparativo</p><div id="rel-comparativo"><div class="loading-msg">Carregando...</div></div></div>
+        <div class="card"><p class="stitle">Comparativo por categoria</p><div id="rel-comparativo"><div class="loading-msg">Carregando...</div></div></div>
       </div>
 
     </div>
@@ -364,13 +364,11 @@ function syncAndRun(mainId,mobileId,fn){
   fn();
 }
 
-// Formata sempre com valor completo — sem abreviações K
 function fmt(v){
   if(isNaN(v)||v===null||v===undefined) return 'R$ 0,00';
   return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
-// Usado apenas nos eixos dos gráficos para não poluir
 function fmtEixo(v){
   if(isNaN(v)||v===null) return 'R$ 0';
   if(v>=1000) return 'R$ '+(v/1000).toFixed(1).replace('.',',')+' k';
@@ -381,15 +379,15 @@ function pctClass(p){ return p>=100?'br':p>=80?'ba':'bg'; }
 function barColor(p){ return p>=100?'#F09595':p>=80?'#EF9F27':'#5DCAA5'; }
 
 function catIcon(cat){
-  const m={alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',fármacia:'ti-pill',mercado:'ti-building-store'};
+  const m={alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',fármacia:'ti-pill',mercado:'ti-building-store',aluguel:'ti-home',luz:'ti-bolt',internet:'ti-wifi',outro:'ti-dots'};
   return m[(cat||'').toLowerCase()]||'ti-receipt';
 }
 function catBg(cat){
-  const m={alimentação:'#EAF3DE',restaurante:'#FAEEDA',transporte:'#E6F1FB',saúde:'#FCEBEB',lazer:'#FBEAF0',compras:'#E1F5EE',viagem:'#EEEDFE',moradia:'#F1EFE8',educação:'#E6F1FB',pets:'#FAEEDA',academia:'#EAF3DE'};
+  const m={alimentação:'#EAF3DE',restaurante:'#FAEEDA',transporte:'#E6F1FB',saúde:'#FCEBEB',lazer:'#FBEAF0',compras:'#E1F5EE',viagem:'#EEEDFE',moradia:'#F1EFE8',educação:'#E6F1FB',pets:'#FAEEDA',academia:'#EAF3DE',aluguel:'#F1EFE8',luz:'#FAEEDA',internet:'#E6F1FB',outro:'#F1EFE8'};
   return m[(cat||'').toLowerCase()]||'#F1EFE8';
 }
 function catFg(cat){
-  const m={alimentação:'#3B6D11',restaurante:'#854F0B',transporte:'#185FA5',saúde:'#A32D2D',lazer:'#993556',compras:'#085041',viagem:'#3C3489',moradia:'#5F5E5A',educação:'#185FA5',pets:'#854F0B',academia:'#3B6D11'};
+  const m={alimentação:'#3B6D11',restaurante:'#854F0B',transporte:'#185FA5',saúde:'#A32D2D',lazer:'#993556',compras:'#085041',viagem:'#3C3489',moradia:'#5F5E5A',educação:'#185FA5',pets:'#854F0B',academia:'#3B6D11',aluguel:'#5F5E5A',luz:'#854F0B',internet:'#185FA5',outro:'#5F5E5A'};
   return m[(cat||'').toLowerCase()]||'#5F5E5A';
 }
 
@@ -609,7 +607,7 @@ function renderOverview(){
 
   const budgets=r.budgets||{};
   const cats=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
-  document.getElementById('ov-categorias').innerHTML=cats.slice(0,8).map(([cat,val])=>{
+  document.getElementById('ov-categorias').innerHTML=cats.map(([cat,val])=>{
     const lim=budgets[cat];
     const pct=lim?Math.round((val/lim)*100):null;
     return `<div style="margin-bottom:10px">
@@ -799,19 +797,37 @@ async function loadRelatorio(){
   try{
     const data=await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
     cache.relatorio=data;
+
     document.getElementById('rel-metrics').innerHTML=`
       <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmt(data.media)}</p><p class="metric-sub">${mesesRel} meses</p></div>
       <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value" style="font-size:15px">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmt(data.maiorMes?.total||0)}</p></div>
       <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:15px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral?Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100):0}%</p></div>
     `;
+
     if(charts.relEvol) charts.relEvol.destroy();
     charts.relEvol=new Chart(document.getElementById('rel-evol-chart'),{
       type:'bar',
-      data:{labels:(data.evolucao||[]).map(e=>e.mes),datasets:[{data:(data.evolucao||[]).map(e=>e.total),backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),borderRadius:4,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtEixo(v)}}}}
+      data:{
+        labels:(data.evolucao||[]).map(e=>e.mes),
+        datasets:[{
+          data:(data.evolucao||[]).map(e=>e.total),
+          backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),
+          borderRadius:4,borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtEixo(v)}}
+        }
+      }
     });
+
+    // Top categorias — todas, sem limite
     const totalG=data.totalGeral||1;
-    const tops=Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const tops=Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]);
     const maxV=tops[0]?.[1]||1;
     document.getElementById('rel-categorias').innerHTML=tops.map(([cat,val])=>`
       <div style="margin-bottom:10px">
@@ -822,21 +838,23 @@ async function loadRelatorio(){
         <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
       </div>
     `).join('');
+
+    // Tabela comparativa — todas as categorias, sem limite
     const evol=data.evolucao||[];
-    const cats=(data.todasCategorias||[]).slice(0,5);
-    document.getElementById('rel-comparativo').innerHTML=`
+    const cats=data.todasCategorias||[];
+    document.getElementById('rel-comparativo').innerHTML=cats.length===0?'<div class="empty">Nenhum dado</div>':`
       <div style="overflow-x:auto">
         <table style="width:100%;font-size:12px;border-collapse:collapse;min-width:400px">
           <thead><tr>
-            <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">Categoria</th>
-            ${evol.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea">${e.mes}</th>`).join('')}
+            <th style="text-align:left;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea;white-space:nowrap">Categoria</th>
+            ${evol.map(e=>`<th style="text-align:right;padding:6px 8px;color:#999;font-weight:500;border-bottom:0.5px solid #f0f0ea;white-space:nowrap">${e.mes}</th>`).join('')}
           </tr></thead>
           <tbody>${cats.map(cat=>`<tr>
             <td style="padding:6px 8px;border-bottom:0.5px solid #f0f0ea;font-weight:500;white-space:nowrap">${cat}</td>
             ${evol.map((e,i)=>{
               const val=e.porCategoria?.[cat]||0;
               const prev=i>0?(evol[i-1].porCategoria?.[cat]||0):null;
-              const diff=prev!==null?Math.round((val-prev)/Math.max(prev,1)*100):null;
+              const diff=prev!==null&&prev>0?Math.round((val-prev)/prev*100):null;
               return `<td style="text-align:right;padding:6px 8px;border-bottom:0.5px solid #f0f0ea;white-space:nowrap">${val>0?fmt(val):'<span style="color:#ddd">—</span>'}${diff!==null&&val>0?`<span class="badge ${diff>20?'br':diff>0?'ba':'bg'}" style="margin-left:4px">${diff>0?'+':''}${diff}%</span>`:''}</td>`;
             }).join('')}
           </tr>`).join('')}</tbody>
