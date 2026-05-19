@@ -112,28 +112,20 @@ async function getApiFechamentoMesAnterior() {
   const anoAnterior = agora.getMonth() === 0 ? agora.getFullYear() - 1 : agora.getFullYear();
   const mesDoisAtras = mesAnterior === 0 ? 11 : mesAnterior - 1;
   const anoDoisAtras = mesAnterior === 0 ? anoAnterior - 1 : anoAnterior;
-
   const { porCategoria, total } = await getGastosPorMes(mesAnterior, anoAnterior);
   const { total: totalAnterior } = await getGastosPorMes(mesDoisAtras, anoDoisAtras);
   const budgets = await getBudgets();
-
   if (total === 0) return null;
-
   const score = calcularScore(porCategoria, budgets);
   const budgetTotal = Object.values(budgets).reduce((a, b) => a + b, 0);
   const pctBudget = budgetTotal > 0 ? Math.round((total / budgetTotal) * 100) : null;
   const varPct = totalAnterior > 0 ? Math.round((total - totalAnterior) / totalAnterior * 100) : null;
-
   const nomeMes = new Date(anoAnterior, mesAnterior, 1).toLocaleDateString("pt-BR", { month: "long" });
-
-  const categorias = Object.entries(porCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat, val]) => {
-      const limite = budgets[cat];
-      const pct = limite ? Math.round((val / limite) * 100) : null;
-      return { cat, val, limite, pct };
-    });
-
+  const categorias = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).map(([cat, val]) => {
+    const limite = budgets[cat];
+    const pct = limite ? Math.round((val / limite) * 100) : null;
+    return { cat, val, limite, pct };
+  });
   return { nomeMes, total, totalAnterior, varPct, score, budgetTotal, pctBudget, categorias };
 }
 
@@ -265,29 +257,89 @@ async function getApiFaturas() {
   const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
   const resGastos = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const gastos = (resGastos.data.values || []).slice(1);
+  const resParcelas = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Parcelas!A:H" });
+  const todasParcelas = (resParcelas.data.values || []).slice(1);
+
   const parsearData = (str) => {
     const p = str.split("/");
     if (p.length < 3) return null;
     return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
   };
+
+  const agora = new Date();
   const result = [];
+
   for (const cartao of cartoes) {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
     const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
     const { inicio, fim, diasRestantes, pctCiclo, totalDias, diasDecorridos } = calcularCicloFatura(diaFechamento);
+
     const gastosCartao = gastos.filter(row => {
       if (!row[0] || !row[5]) return false;
       const d = parsearData(row[0]);
       if (!d) return false;
       return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
     });
+
     const aVista = gastosCartao.filter(row => (row[7] || "").toLowerCase() !== "parcelado").reduce((acc, row) => acc + parseVal(row[1]), 0);
     const parcelas = gastosCartao.filter(row => (row[7] || "").toLowerCase() === "parcelado").reduce((acc, row) => acc + parseVal(row[1]), 0);
     const total = aVista + parcelas;
-    result.push({ nome: nomeCartao, total, aVista, parcelas, limite: limiteCartao, diasRestantes, pctCiclo, totalDias, diasDecorridos, inicioFormatado: formatarData(inicio), fimFormatado: formatarData(fim) });
+
+    // Parcelas ativas deste cartão
+    const parcelasAtivas = todasParcelas
+      .filter(row => {
+        const totalP = parseInt(row[6] || "0");
+        const pagas = parseInt(row[7] || "0");
+        const cartaoRow = (row[3] || "").toLowerCase();
+        return pagas < totalP && cartaoRow.includes(nomeCartao.toLowerCase());
+      })
+      .map(row => ({
+        descricao: row[0] || "",
+        valorParcela: parseFloat((row[1] || "0").replace(",", ".")),
+        categoria: row[2] || "",
+        totalParcelas: parseInt(row[6] || "0"),
+        parcelasPagas: parseInt(row[7] || "0"),
+        restantes: parseInt(row[6] || "0") - parseInt(row[7] || "0"),
+      }))
+      .sort((a, b) => b.valorParcela - a.valorParcela);
+
+    // Projeção de parcelas por mês (4 meses)
+    const projecaoParcelas = [0, 1, 2, 3].map(offset => {
+      const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
+      const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
+      const totalMes = parcelasAtivas.reduce((acc, p) => {
+        return p.restantes > offset ? acc + p.valorParcela : acc;
+      }, 0);
+      return { nomeMes, total: totalMes };
+    });
+
+    result.push({
+      nome: nomeCartao,
+      total, aVista, parcelas,
+      limite: limiteCartao,
+      diasRestantes, pctCiclo, totalDias, diasDecorridos,
+      inicioFormatado: formatarData(inicio),
+      fimFormatado: formatarData(fim),
+      parcelasAtivas,
+      projecaoParcelas,
+    });
   }
-  return { cartoes: result };
+
+  // Próximo fechamento
+  const proximoFechamento = result
+    .filter(c => c.diasRestantes > 0)
+    .sort((a, b) => a.diasRestantes - b.diasRestantes)[0];
+
+  const totalGeral = result.reduce((a, c) => a + c.total, 0);
+  const totalAVista = result.reduce((a, c) => a + c.aVista, 0);
+  const totalParcelas = result.reduce((a, c) => a + c.parcelas, 0);
+
+  return {
+    cartoes: result,
+    totalGeral, totalAVista, totalParcelas,
+    proximoFechamento: proximoFechamento ? { nome: proximoFechamento.nome, diasRestantes: proximoFechamento.diasRestantes } : null,
+  };
 }
 
 async function getApiTransacoes(mes, ano, cartao, pessoa, tipo) {
