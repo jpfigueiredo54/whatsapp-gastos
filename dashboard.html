@@ -89,6 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fechamento-card .fc-icon i{font-size:18px;color:#854F0B}
 .fechamento-card .fc-close{background:none;border:none;cursor:pointer;color:#aaa;font-size:18px;padding:0;line-height:1}
 .fechamento-card .fc-cats{display:flex;flex-direction:column;gap:7px}
+.expand-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#378ADD;padding:8px 0 0;display:flex;align-items:center;gap:4px}
 @media(max-width:768px){
   .sidebar{display:none}
   .bottom-nav{display:block}
@@ -180,6 +181,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
           <button class="filter-toggle-btn" onclick="openSheet('sheet-faturas')"><i class="ti ti-adjustments-horizontal" style="font-size:14px"></i> Filtros</button>
         </div>
+        <div class="grid4" id="fat-metrics" style="margin-bottom:1.25rem"></div>
         <div id="fat-content"><div class="loading-msg">Carregando...</div></div>
       </div>
 
@@ -674,20 +676,85 @@ function setCatFiltro(tipo,el){
   renderOverview();
 }
 
+function toggleParcelas(id){
+  const el=document.getElementById(id);
+  const btn=document.getElementById('btn-'+id);
+  if(!el||!btn) return;
+  const expanded=el.style.display!=='none';
+  el.style.display=expanded?'none':'block';
+  btn.innerHTML=expanded
+    ?`<i class="ti ti-chevron-down" style="font-size:13px" aria-hidden="true"></i> ver todas as parcelas`
+    :`<i class="ti ti-chevron-up" style="font-size:13px" aria-hidden="true"></i> recolher`;
+}
+
 function renderFaturas(){
   if(!cache.faturas) return;
   const cartao=document.getElementById('fat-cartao')?.value||'todos';
-  let fat=cache.faturas.cartoes;
+  const f=cache.faturas;
+  let fat=f.cartoes;
   if(cartao!=='todos') fat=fat.filter(c=>c.nome===cartao);
-  document.getElementById('fat-sub').textContent=fat.length+' cartões';
-  document.getElementById('fat-content').innerHTML=fat.map(c=>{
+
+  document.getElementById('fat-sub').textContent=fat.length+' cartões · ciclo atual';
+
+  // Métricas gerais
+  const totalGeral=fat.reduce((a,c)=>a+c.total,0);
+  const totalAVista=fat.reduce((a,c)=>a+c.aVista,0);
+  const totalParcelas=fat.reduce((a,c)=>a+c.parcelas,0);
+  const prox=fat.filter(c=>c.diasRestantes>0).sort((a,b)=>a.diasRestantes-b.diasRestantes)[0];
+
+  document.getElementById('fat-metrics').innerHTML=`
+    <div class="metric"><p class="metric-label">Total em aberto</p><p class="metric-value">${fmt(totalGeral)}</p><p class="metric-sub">${fat.length} cartões</p></div>
+    <div class="metric"><p class="metric-label">À vista (ciclo)</p><p class="metric-value">${fmt(totalAVista)}</p><p class="metric-sub">novos gastos</p></div>
+    <div class="metric"><p class="metric-label">Parcelas (ciclo)</p><p class="metric-value">${fmt(totalParcelas)}</p><p class="metric-sub">compromissos fixos</p></div>
+    <div class="metric"><p class="metric-label">Próximo fechamento</p><p class="metric-value" style="color:${prox&&prox.diasRestantes<=7?'#A32D2D':'#1a1a1a'}">${prox?prox.diasRestantes+' dias':'—'}</p><p class="metric-sub">${prox?prox.nome:'—'}</p></div>
+  `;
+
+  document.getElementById('fat-content').innerHTML=fat.map((c,ci)=>{
     const pct=c.limite?Math.round((c.total/c.limite)*100):null;
     const alerta=pct!==null?(pct>=100?'🔴 Limite ultrapassado. Controle-se.':pct>=80?'🟠 Ritmo elevado. Risco de estourar.':c.pctCiclo&&pct-c.pctCiclo>=20?'🟡 Consumo acima do esperado.':'✅ Consumo dentro do esperado.'):'';
+
+    const parcAtivas=c.parcelasAtivas||[];
+    const PREVIEW=4;
+    const preview=parcAtivas.slice(0,PREVIEW);
+    const resto=parcAtivas.slice(PREVIEW);
+    const maxProj=c.projecaoParcelas&&c.projecaoParcelas[0]?c.projecaoParcelas[0].total:0;
+
+    const parcelasHtml=preview.map(p=>`
+      <div class="row">
+        <span style="font-size:12px;color:#444">${p.descricao}</span>
+        <span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span>
+      </div>
+    `).join('');
+
+    const restoHtml=resto.length?`
+      <div id="extra-${ci}" style="display:none">
+        ${resto.map(p=>`
+          <div class="row">
+            <span style="font-size:12px;color:#444">${p.descricao}</span>
+            <span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span>
+          </div>
+        `).join('')}
+      </div>
+      <button class="expand-btn" id="btn-extra-${ci}" onclick="toggleParcelas('extra-${ci}')">
+        <i class="ti ti-chevron-down" style="font-size:13px" aria-hidden="true"></i> ver todas as ${parcAtivas.length} parcelas
+      </button>
+    `:'';
+
+    const projecaoHtml=(c.projecaoParcelas||[]).map((x,i)=>`
+      <div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span>
+          <span style="font-size:12px">${fmt(x.total)}</span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${maxProj>0?Math.round(x.total/maxProj*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
+      </div>
+    `).join('');
+
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
         <div>
-          <p style="font-size:16px;font-weight:500">${c.nome}</p>
-          <p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias</p>
+          <p style="font-size:15px;font-weight:500">${c.nome}</p>
+          <p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias até fechar</p>
         </div>
         ${pct!==null?`<span class="badge ${pctClass(pct)}" style="font-size:13px;padding:4px 10px">${pct}%</span>`:''}
       </div>
@@ -697,7 +764,21 @@ function renderFaturas(){
         <div class="metric"><p class="metric-label">Total</p><p class="metric-value" style="font-size:15px">${fmt(c.total)}</p>${c.limite?`<p class="metric-sub">de ${fmt(c.limite)}</p>`:''}</div>
       </div>
       ${pct!==null?`<div class="progress-bg" style="height:8px;margin-bottom:8px"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor(pct)}"></div></div>`:''}
-      ${alerta?`<p style="font-size:12px;color:#666;margin-top:4px">${alerta}</p>`:''}
+      ${alerta?`<p style="font-size:12px;color:#666;margin-bottom:1rem">${alerta}</p>`:''}
+      ${parcAtivas.length>0||projecaoHtml?`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem">
+        ${parcAtivas.length>0?`
+        <div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem">
+          <p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Parcelas ativas</p>
+          ${parcelasHtml}
+          ${restoHtml}
+        </div>`:'<div></div>'}
+        ${projecaoHtml?`
+        <div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem">
+          <p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Projeção de parcelas</p>
+          ${projecaoHtml}
+        </div>`:''}
+      </div>`:''}
     </div>`;
   }).join('');
 }
@@ -797,35 +878,17 @@ async function loadRelatorio(){
   try{
     const data=await fetch(`/api/relatorio?meses=${mesesRel}`).then(r=>r.json());
     cache.relatorio=data;
-
     document.getElementById('rel-metrics').innerHTML=`
       <div class="metric"><p class="metric-label">Média mensal</p><p class="metric-value">${fmt(data.media)}</p><p class="metric-sub">${mesesRel} meses</p></div>
       <div class="metric"><p class="metric-label">Mês mais caro</p><p class="metric-value" style="font-size:15px">${data.maiorMes?.mes||'—'}</p><p class="metric-sub">${fmt(data.maiorMes?.total||0)}</p></div>
       <div class="metric"><p class="metric-label">Categoria líder</p><p class="metric-value" style="font-size:15px">${data.categoriaLider?.[0]||'—'}</p><p class="metric-sub">${data.totalGeral?Math.round((data.categoriaLider?.[1]||0)/data.totalGeral*100):0}%</p></div>
     `;
-
     if(charts.relEvol) charts.relEvol.destroy();
     charts.relEvol=new Chart(document.getElementById('rel-evol-chart'),{
       type:'bar',
-      data:{
-        labels:(data.evolucao||[]).map(e=>e.mes),
-        datasets:[{
-          data:(data.evolucao||[]).map(e=>e.total),
-          backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),
-          borderRadius:4,borderSkipped:false
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
-        scales:{
-          x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},
-          y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtEixo(v)}}
-        }
-      }
+      data:{labels:(data.evolucao||[]).map(e=>e.mes),datasets:[{data:(data.evolucao||[]).map(e=>e.total),backgroundColor:(data.evolucao||[]).map((_,i,arr)=>i===arr.length-1?'#378ADD':'#B5D4F4'),borderRadius:4,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtEixo(v)}}}}
     });
-
-    // Top categorias — todas, sem limite
     const totalG=data.totalGeral||1;
     const tops=Object.entries(data.totalPorCategoria||{}).sort((a,b)=>b[1]-a[1]);
     const maxV=tops[0]?.[1]||1;
@@ -838,8 +901,6 @@ async function loadRelatorio(){
         <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
       </div>
     `).join('');
-
-    // Tabela comparativa — todas as categorias, sem limite
     const evol=data.evolucao||[];
     const cats=data.todasCategorias||[];
     document.getElementById('rel-comparativo').innerHTML=cats.length===0?'<div class="empty">Nenhum dado</div>':`
