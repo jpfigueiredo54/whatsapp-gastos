@@ -259,34 +259,27 @@ async function getApiFaturas() {
   const gastos = (resGastos.data.values || []).slice(1);
   const resParcelas = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Parcelas!A:H" });
   const todasParcelas = (resParcelas.data.values || []).slice(1);
-
   const parsearData = (str) => {
     const p = str.split("/");
     if (p.length < 3) return null;
     return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
   };
-
   const agora = new Date();
   const result = [];
-
   for (const cartao of cartoes) {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
     const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
     const { inicio, fim, diasRestantes, pctCiclo, totalDias, diasDecorridos } = calcularCicloFatura(diaFechamento);
-
     const gastosCartao = gastos.filter(row => {
       if (!row[0] || !row[5]) return false;
       const d = parsearData(row[0]);
       if (!d) return false;
       return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
     });
-
     const aVista = gastosCartao.filter(row => (row[7] || "").toLowerCase() !== "parcelado").reduce((acc, row) => acc + parseVal(row[1]), 0);
     const parcelas = gastosCartao.filter(row => (row[7] || "").toLowerCase() === "parcelado").reduce((acc, row) => acc + parseVal(row[1]), 0);
     const total = aVista + parcelas;
-
-    // Parcelas ativas deste cartão
     const parcelasAtivas = todasParcelas
       .filter(row => {
         const totalP = parseInt(row[6] || "0");
@@ -303,8 +296,6 @@ async function getApiFaturas() {
         restantes: parseInt(row[6] || "0") - parseInt(row[7] || "0"),
       }))
       .sort((a, b) => b.valorParcela - a.valorParcela);
-
-    // Projeção de parcelas por mês (4 meses)
     const projecaoParcelas = [0, 1, 2, 3].map(offset => {
       const mes = new Date(agora.getFullYear(), agora.getMonth() + offset, 1);
       const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
@@ -313,10 +304,8 @@ async function getApiFaturas() {
       }, 0);
       return { nomeMes, total: totalMes };
     });
-
     result.push({
-      nome: nomeCartao,
-      total, aVista, parcelas,
+      nome: nomeCartao, total, aVista, parcelas,
       limite: limiteCartao,
       diasRestantes, pctCiclo, totalDias, diasDecorridos,
       inicioFormatado: formatarData(inicio),
@@ -325,19 +314,12 @@ async function getApiFaturas() {
       projecaoParcelas,
     });
   }
-
-  // Próximo fechamento
-  const proximoFechamento = result
-    .filter(c => c.diasRestantes > 0)
-    .sort((a, b) => a.diasRestantes - b.diasRestantes)[0];
-
+  const proximoFechamento = result.filter(c => c.diasRestantes > 0).sort((a, b) => a.diasRestantes - b.diasRestantes)[0];
   const totalGeral = result.reduce((a, c) => a + c.total, 0);
   const totalAVista = result.reduce((a, c) => a + c.aVista, 0);
   const totalParcelas = result.reduce((a, c) => a + c.parcelas, 0);
-
   return {
-    cartoes: result,
-    totalGeral, totalAVista, totalParcelas,
+    cartoes: result, totalGeral, totalAVista, totalParcelas,
     proximoFechamento: proximoFechamento ? { nome: proximoFechamento.nome, diasRestantes: proximoFechamento.diasRestantes } : null,
   };
 }
@@ -348,7 +330,7 @@ async function getApiTransacoes(mes, ano, cartao, pessoa, tipo) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const rows = res.data.values || [];
-  let transacoes = rows.slice(1).filter(row => {
+  const transacoes = rows.slice(1).filter(row => {
     if (!row[0]) return false;
     const partes = row[0].split("/");
     if (partes.length < 3) return false;
@@ -369,11 +351,7 @@ async function getApiTransacoes(mes, ano, cartao, pessoa, tipo) {
     cartao: row[5] || "",
     responsavel: row[6] || "",
     tipo: row[7] || "",
-  })).sort((a, b) => {
-    const [da, ma, ya] = a.data.split("/").map(Number);
-    const [db, mb, yb] = b.data.split("/").map(Number);
-    return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
-  });
+  })).reverse();
   return { transacoes, total: transacoes.reduce((acc, t) => acc + t.valor, 0) };
 }
 
