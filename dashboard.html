@@ -69,6 +69,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-label{font-size:11px;color:#888;margin-bottom:4px}
 .metric-value{font-size:18px;font-weight:500}
 .metric-sub{font-size:11px;color:#aaa;margin-top:2px}
+.metric.green{background:#EAF3DE}
+.metric.green .metric-value{color:#3B6D11}
+.metric.red{background:#FCEBEB}
+.metric.red .metric-value{color:#A32D2D}
+.metric.blue{background:#E6F1FB}
+.metric.blue .metric-value{color:#185FA5}
 .card{background:#fff;border:0.5px solid #e0e0d8;border-radius:14px;padding:1.25rem;margin-bottom:12px}
 .stitle{font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
 .stitle a{font-size:11px;color:#378ADD;text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer}
@@ -78,6 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .br{background:#FCEBEB;color:#A32D2D}
 .bblue{background:#E6F1FB;color:#185FA5}
 .bgray{background:#F1EFE8;color:#5F5E5A}
+.bgreen{background:#EAF3DE;color:#3B6D11}
 .progress-bg{background:#f0f0ea;border-radius:99px;height:5px;overflow:hidden;margin-top:4px}
 .progress-fill{height:100%;border-radius:99px}
 .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0f0ea}
@@ -98,6 +105,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fechamento-card .fc-close{background:none;border:none;cursor:pointer;color:#aaa;font-size:18px;padding:0;line-height:1}
 .fechamento-card .fc-cats{display:flex;flex-direction:column;gap:7px}
 .expand-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#378ADD;padding:8px 0 0;display:flex;align-items:center;gap:4px}
+.saldo-positivo{color:#3B6D11}
+.saldo-negativo{color:#A32D2D}
+.entrada-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid #f0f0ea}
+.entrada-item:last-child{border-bottom:none}
+.entrada-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
 @media(max-width:768px){
   .sidebar{display:none}
   .bottom-nav{display:block}
@@ -131,6 +143,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="sidebar">
       <div class="logo"><div class="logo-icon">L</div>Lolos Finance</div>
       <div class="nav-item active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i> Visão geral</div>
+      <div class="nav-item" onclick="showPage('fluxo')"><i class="ti ti-arrows-exchange"></i> Fluxo de caixa</div>
       <div class="nav-item" onclick="showPage('faturas')"><i class="ti ti-credit-card"></i> Faturas</div>
       <div class="nav-item" onclick="showPage('parcelas')"><i class="ti ti-repeat"></i> Parcelas</div>
       <div class="nav-item" onclick="showPage('transacoes')"><i class="ti ti-list"></i> Lançamentos</div>
@@ -142,6 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <div class="main">
 
+      <!-- VISÃO GERAL -->
       <div class="page active" id="page-overview">
         <div class="topbar">
           <div class="topbar-left"><h1>Visão geral</h1><p id="ov-sub">carregando...</p></div>
@@ -181,6 +195,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
+      <!-- FLUXO DE CAIXA -->
+      <div class="page" id="page-fluxo">
+        <div class="topbar">
+          <div class="topbar-left"><h1>Fluxo de caixa</h1><p id="fluxo-sub">receitas vs gastos</p></div>
+          <div class="filters">
+            <button class="fbtn" onclick="setMesesFluxo(3,this)">3 meses</button>
+            <button class="fbtn active" onclick="setMesesFluxo(6,this)">6 meses</button>
+            <button class="fbtn" onclick="setMesesFluxo(12,this)">12 meses</button>
+          </div>
+        </div>
+
+        <!-- Métricas do mês -->
+        <div class="grid3" id="fluxo-metrics"></div>
+
+        <!-- Gráfico e próximas entradas -->
+        <div class="grid2e">
+          <div class="card">
+            <p class="stitle">Receitas vs Gastos</p>
+            <div style="position:relative;height:200px"><canvas id="fluxo-chart" role="img" aria-label="Fluxo de caixa"></canvas></div>
+          </div>
+          <div class="card">
+            <p class="stitle">Próximas entradas</p>
+            <div id="fluxo-proximas"></div>
+          </div>
+        </div>
+
+        <!-- Histórico mensal e por pessoa -->
+        <div class="grid2e">
+          <div class="card">
+            <p class="stitle">Histórico mensal</p>
+            <div id="fluxo-historico"></div>
+          </div>
+          <div class="card">
+            <p class="stitle">Receitas por pessoa · mês atual</p>
+            <div id="fluxo-pessoas"></div>
+          </div>
+        </div>
+
+        <!-- Últimas receitas -->
+        <div class="card">
+          <p class="stitle">Últimas receitas</p>
+          <div id="fluxo-receitas-lista"></div>
+        </div>
+      </div>
+
+      <!-- FATURAS -->
       <div class="page" id="page-faturas">
         <div class="topbar">
           <div class="topbar-left"><h1>Faturas</h1><p id="fat-sub">—</p></div>
@@ -193,6 +253,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="fat-content"><div class="loading-msg">Carregando...</div></div>
       </div>
 
+      <!-- PARCELAS -->
       <div class="page" id="page-parcelas">
         <div class="topbar">
           <div class="topbar-left"><h1>Parcelas</h1><p id="par-sub">—</p></div>
@@ -215,6 +276,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="card"><p class="stitle">Lista de parcelas</p><div id="par-lista"></div></div>
       </div>
 
+      <!-- LANÇAMENTOS -->
       <div class="page" id="page-transacoes">
         <div class="topbar">
           <div class="topbar-left"><h1>Lançamentos</h1><p id="tx-sub">—</p></div>
@@ -234,6 +296,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="card"><div id="tx-content"><div class="loading-msg">Carregando...</div></div></div>
       </div>
 
+      <!-- RELATÓRIOS -->
       <div class="page" id="page-relatorios">
         <div class="topbar">
           <div class="topbar-left"><h1>Relatórios</h1><p>análise histórica</p></div>
@@ -257,11 +320,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  <!-- BOTTOM NAV mobile -->
   <div class="bottom-nav">
     <div class="bottom-nav-inner">
       <div class="bnav-item active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i><span>Início</span></div>
+      <div class="bnav-item" onclick="showPage('fluxo')"><i class="ti ti-arrows-exchange"></i><span>Fluxo</span></div>
       <div class="bnav-item" onclick="showPage('faturas')"><i class="ti ti-credit-card"></i><span>Faturas</span></div>
-      <div class="bnav-item" onclick="showPage('parcelas')"><i class="ti ti-repeat"></i><span>Parcelas</span></div>
       <div class="bnav-item" onclick="showPage('transacoes')"><i class="ti ti-list"></i><span>Gastos</span></div>
       <div class="bnav-item" onclick="showPage('relatorios')"><i class="ti ti-chart-bar"></i><span>Relatórios</span></div>
     </div>
@@ -329,9 +393,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script>
 const SENHA='lolosfinance';
-let cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:[]};
+let cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:[],fluxo:null,receitas:null};
 let catFiltroTipo='todos';
 let mesesRel=6;
+let mesesFluxo=6;
 let charts={};
 
 function login(){
@@ -406,13 +471,17 @@ function showPage(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const idx={overview:0,faturas:1,parcelas:2,transacoes:3,relatorios:4};
+  const idx={overview:0,fluxo:1,faturas:2,parcelas:3,transacoes:4,relatorios:5};
   const i=idx[id];
   document.querySelectorAll('.nav-item')[i]?.classList.add('active');
-  document.querySelectorAll('.bnav-item')[i]?.classList.add('active');
+  // bottom nav mapping: overview=0, fluxo=1, faturas=2, transacoes=3, relatorios=4
+  const bIdx={overview:0,fluxo:1,faturas:2,transacoes:3,relatorios:4};
+  const bi=bIdx[id];
+  if(bi!==undefined) document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');
   if(id==='transacoes') renderTransacoes();
   if(id==='relatorios'&&!cache.relatorio) loadRelatorio();
   if(id==='relatorios'&&isMobile()) document.getElementById('rel-period-mobile').style.display='flex';
+  if(id==='fluxo'&&!cache.fluxo) loadFluxo();
 }
 
 function populateMes(selId,mobileSelId){
@@ -560,6 +629,130 @@ async function initDashboard(){
   }
 }
 
+async function loadFluxo(){
+  try{
+    const [fluxo,receitas]=await Promise.all([
+      fetch(`/api/fluxo?meses=${mesesFluxo}`).then(r=>r.json()),
+      fetch('/api/receitas').then(r=>r.json()),
+    ]);
+    cache.fluxo=fluxo;
+    cache.receitas=receitas;
+    renderFluxo();
+  }catch(e){console.error('Erro fluxo:',e);}
+}
+
+function renderFluxo(){
+  const f=cache.fluxo;
+  const r=cache.receitas;
+  if(!f) return;
+
+  const saldoClass=f.saldoMes>=0?'green':'red';
+  const saldoIcon=f.saldoMes>=0?'ti-trending-up':'ti-trending-down';
+
+  document.getElementById('fluxo-metrics').innerHTML=`
+    <div class="metric green"><p class="metric-label">Receitas · mês</p><p class="metric-value">${fmt(f.receitasMes)}</p><p class="metric-sub">entradas registradas</p></div>
+    <div class="metric red"><p class="metric-label">Gastos · mês</p><p class="metric-value">${fmt(f.gastosMes)}</p><p class="metric-sub">saídas registradas</p></div>
+    <div class="metric ${saldoClass}"><p class="metric-label">Saldo · mês</p><p class="metric-value">${fmt(f.saldoMes)}</p><p class="metric-sub">${f.saldoMes>=0?'no azul':'no vermelho'}</p></div>
+  `;
+
+  // Gráfico
+  if(charts.fluxo) charts.fluxo.destroy();
+  charts.fluxo=new Chart(document.getElementById('fluxo-chart'),{
+    type:'bar',
+    data:{
+      labels:(f.historico||[]).map(h=>h.mes),
+      datasets:[
+        {label:'Receitas',data:(f.historico||[]).map(h=>h.receitas),backgroundColor:'#5DCAA5',borderRadius:4,borderSkipped:false},
+        {label:'Gastos',data:(f.historico||[]).map(h=>h.gastos),backgroundColor:'#F09595',borderRadius:4,borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#999'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#999',callback:v=>fmtEixo(v)}}}
+    }
+  });
+
+  // Próximas entradas
+  const proximas=f.proximasEntradas||[];
+  const pColors={Joao:'#378ADD',Isabella:'#D4537E'};
+  document.getElementById('fluxo-proximas').innerHTML=proximas.length?proximas.map(e=>{
+    const cor=pColors[e.pessoa]||'#888';
+    const iniciais=e.pessoa.slice(0,2).toUpperCase();
+    return `<div class="entrada-item">
+      <div class="entrada-avatar" style="background:${cor}22;color:${cor}">${iniciais}</div>
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:500">${e.pessoa}</p>
+        <p style="font-size:11px;color:#999">dia ${e.dia} · ${e.diasRestantes} dias</p>
+      </div>
+      <div style="text-align:right">
+        ${e.valorEstimado>0?`<p style="font-size:13px;font-weight:500;color:#3B6D11">${fmt(e.valorEstimado)}</p><p style="font-size:10px;color:#aaa">estimado</p>`:'<p style="font-size:12px;color:#aaa">—</p>'}
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Sem entradas previstas este mês</div>';
+
+  // Histórico mensal
+  document.getElementById('fluxo-historico').innerHTML=(f.historico||[]).slice().reverse().map((h,i)=>{
+    const saldo=h.saldo;
+    const isAtual=i===0;
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:${isAtual?'500':'400'}">${h.mes}</span>
+        <span style="font-size:12px;font-weight:500;color:${saldo>=0?'#3B6D11':'#A32D2D'}">${saldo>=0?'+':''}${fmt(saldo)}</span>
+      </div>
+      <div style="display:flex;gap:6px;font-size:11px;color:#999">
+        <span style="color:#3B6D11">↑ ${fmt(h.receitas)}</span>
+        <span>·</span>
+        <span style="color:#A32D2D">↓ ${fmt(h.gastos)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Por pessoa
+  const porPessoa=f.porPessoaMes||{};
+  document.getElementById('fluxo-pessoas').innerHTML=Object.entries(porPessoa).length?
+    Object.entries(porPessoa).sort((a,b)=>b[1]-a[1]).map(([p,v])=>{
+      const cor=pColors[p]||'#888';
+      const total=Object.values(porPessoa).reduce((a,b)=>a+b,0);
+      const pct=total?Math.round(v/total*100):0;
+      return `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${cor}"></div>
+            <span style="font-size:12px">${p}</span>
+          </div>
+          <span style="font-size:12px;font-weight:500">${fmt(v)} <span style="color:#aaa;font-weight:400">${pct}%</span></span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%;background:${cor}"></div></div>
+      </div>`;
+    }).join('')
+  :'<div class="empty">Nenhuma receita este mês</div>';
+
+  // Últimas receitas
+  const lista=(r?.lista||[]).slice(0,8);
+  document.getElementById('fluxo-receitas-lista').innerHTML=lista.length?lista.map(rec=>{
+    const cor=pColors[rec.pessoa]||'#888';
+    return `<div class="tx-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="tx-icon" style="background:${cor}22;color:${cor}"><i class="ti ti-circle-arrow-down"></i></div>
+        <div>
+          <p style="font-size:13px;font-weight:500">${rec.descricao}</p>
+          <p style="font-size:11px;color:#999">${rec.data} · ${rec.pessoa}</p>
+        </div>
+      </div>
+      <p style="font-size:13px;font-weight:500;color:#3B6D11">${fmt(rec.valor)}</p>
+    </div>`;
+  }).join(''):'<div class="empty">Nenhuma receita registrada ainda.<br><span style="font-size:12px;color:#bbb">Mande "recebi 5000 salário" no WhatsApp</span></div>';
+}
+
+async function setMesesFluxo(n,el){
+  mesesFluxo=n;
+  document.querySelectorAll('#page-fluxo .fbtn').forEach(b=>b.classList.remove('active'));
+  el?.classList.add('active');
+  cache.fluxo=null;
+  await loadFluxo();
+}
+
 async function onMesChange(){
   const {mes,ano}=getMesAno('ov-mes');
   try{
@@ -701,68 +894,31 @@ function renderFaturas(){
   const f=cache.faturas;
   let fat=f.cartoes;
   if(cartao!=='todos') fat=fat.filter(c=>c.nome===cartao);
-
   document.getElementById('fat-sub').textContent=fat.length+' cartões · ciclo atual';
-
   const totalGeral=fat.reduce((a,c)=>a+c.total,0);
   const totalAVista=fat.reduce((a,c)=>a+c.aVista,0);
   const totalParcelas=fat.reduce((a,c)=>a+c.parcelas,0);
   const prox=fat.filter(c=>c.diasRestantes>0).sort((a,b)=>a.diasRestantes-b.diasRestantes)[0];
-
   document.getElementById('fat-metrics').innerHTML=`
     <div class="metric"><p class="metric-label">Total em aberto</p><p class="metric-value">${fmt(totalGeral)}</p><p class="metric-sub">${fat.length} cartões</p></div>
     <div class="metric"><p class="metric-label">À vista (ciclo)</p><p class="metric-value">${fmt(totalAVista)}</p><p class="metric-sub">novos gastos</p></div>
     <div class="metric"><p class="metric-label">Parcelas (ciclo)</p><p class="metric-value">${fmt(totalParcelas)}</p><p class="metric-sub">compromissos fixos</p></div>
     <div class="metric"><p class="metric-label">Próximo fechamento</p><p class="metric-value" style="color:${prox&&prox.diasRestantes<=7?'#A32D2D':'#1a1a1a'}">${prox?prox.diasRestantes+' dias':'—'}</p><p class="metric-sub">${prox?prox.nome:'—'}</p></div>
   `;
-
   document.getElementById('fat-content').innerHTML=fat.map((c,ci)=>{
     const pct=c.limite?Math.round((c.total/c.limite)*100):null;
     const alerta=pct!==null?(pct>=100?'🔴 Limite ultrapassado. Controle-se.':pct>=80?'🟠 Ritmo elevado. Risco de estourar.':c.pctCiclo&&pct-c.pctCiclo>=20?'🟡 Consumo acima do esperado.':'✅ Consumo dentro do esperado.'):'';
-
     const parcAtivas=c.parcelasAtivas||[];
     const PREVIEW=4;
     const preview=parcAtivas.slice(0,PREVIEW);
     const resto=parcAtivas.slice(PREVIEW);
     const maxProj=c.projecaoParcelas&&c.projecaoParcelas[0]?c.projecaoParcelas[0].total:0;
-
-    const parcelasHtml=preview.map(p=>`
-      <div class="row">
-        <span style="font-size:12px;color:#444">${p.descricao}</span>
-        <span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span>
-      </div>
-    `).join('');
-
-    const restoHtml=resto.length?`
-      <div id="extra-${ci}" style="display:none">
-        ${resto.map(p=>`
-          <div class="row">
-            <span style="font-size:12px;color:#444">${p.descricao}</span>
-            <span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span>
-          </div>
-        `).join('')}
-      </div>
-      <button class="expand-btn" id="btn-extra-${ci}" onclick="toggleParcelas('extra-${ci}')">
-        <i class="ti ti-chevron-down" style="font-size:13px" aria-hidden="true"></i> ver todas as ${parcAtivas.length} parcelas
-      </button>
-    `:'';
-
-    const projecaoHtml=(c.projecaoParcelas||[]).map((x,i)=>`
-      <div style="margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span>
-          <span style="font-size:12px">${fmt(x.total)}</span>
-        </div>
-        <div class="progress-bg"><div class="progress-fill" style="width:${maxProj>0?Math.round(x.total/maxProj*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
-      </div>
-    `).join('');
-
+    const parcelasHtml=preview.map(p=>`<div class="row"><span style="font-size:12px;color:#444">${p.descricao}</span><span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span></div>`).join('');
+    const restoHtml=resto.length?`<div id="extra-${ci}" style="display:none">${resto.map(p=>`<div class="row"><span style="font-size:12px;color:#444">${p.descricao}</span><span style="font-size:12px;font-weight:500">${fmt(p.valorParcela)} <span style="color:#999;font-weight:400">×${p.restantes}</span></span></div>`).join('')}</div><button class="expand-btn" id="btn-extra-${ci}" onclick="toggleParcelas('extra-${ci}')"><i class="ti ti-chevron-down" style="font-size:13px"></i> ver todas as ${parcAtivas.length} parcelas</button>`:'';
+    const projecaoHtml=(c.projecaoParcelas||[]).map((x,i)=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span><span style="font-size:12px">${fmt(x.total)}</span></div><div class="progress-bg"><div class="progress-fill" style="width:${maxProj>0?Math.round(x.total/maxProj*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div></div>`).join('');
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
-        <div>
-          <p style="font-size:15px;font-weight:500">${c.nome}</p>
-          <p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias até fechar</p>
-        </div>
+        <div><p style="font-size:15px;font-weight:500">${c.nome}</p><p style="font-size:12px;color:#999;margin-top:2px">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias até fechar</p></div>
         ${pct!==null?`<span class="badge ${pctClass(pct)}" style="font-size:13px;padding:4px 10px">${pct}%</span>`:''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem">
@@ -772,20 +928,7 @@ function renderFaturas(){
       </div>
       ${pct!==null?`<div class="progress-bg" style="height:8px;margin-bottom:8px"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor(pct)}"></div></div>`:''}
       ${alerta?`<p style="font-size:12px;color:#666;margin-bottom:1rem">${alerta}</p>`:''}
-      ${parcAtivas.length>0||projecaoHtml?`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem">
-        ${parcAtivas.length>0?`
-        <div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem">
-          <p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Parcelas ativas</p>
-          ${parcelasHtml}
-          ${restoHtml}
-        </div>`:'<div></div>'}
-        ${projecaoHtml?`
-        <div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem">
-          <p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Projeção de parcelas</p>
-          ${projecaoHtml}
-        </div>`:''}
-      </div>`:''}
+      ${parcAtivas.length>0||projecaoHtml?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem">${parcAtivas.length>0?`<div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem"><p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Parcelas ativas</p>${parcelasHtml}${restoHtml}</div>`:'<div></div>'}${projecaoHtml?`<div style="border:0.5px solid #e0e0d8;border-radius:10px;padding:1rem"><p style="font-size:10px;font-weight:500;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Projeção de parcelas</p>${projecaoHtml}</div>`:''}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -803,19 +946,10 @@ function renderParcelasStatic(){
   (p.lista||[]).forEach(x=>{porC[x.cartao]=(porC[x.cartao]||0)+x.valorParcela;});
   const pColors=['#378ADD','#D4537E','#5DCAA5','#EF9F27'];
   document.getElementById('par-cartoes').innerHTML=Object.entries(porC).sort((a,b)=>b[1]-a[1]).map(([c,v],i)=>`
-    <div class="row">
-      <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${pColors[i]||'#888'};display:inline-block"></span><span style="font-size:13px">${c}</span></div>
-      <span style="font-size:13px;font-weight:500">${fmt(v)}</span>
-    </div>
+    <div class="row"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${pColors[i]||'#888'};display:inline-block"></span><span style="font-size:13px">${c}</span></div><span style="font-size:13px;font-weight:500">${fmt(v)}</span></div>
   `).join('');
   document.getElementById('par-projecao').innerHTML=(p.projecao||[]).map((x,i)=>`
-    <div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-        <span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span>
-        <span style="font-size:12px">${fmt(x.total)}</span>
-      </div>
-      <div class="progress-bg"><div class="progress-fill" style="width:${p.totalMensal?Math.round(x.total/p.totalMensal*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div>
-    </div>
+    <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:${i===0?'500':'400'}">${x.nomeMes}</span><span style="font-size:12px">${fmt(x.total)}</span></div><div class="progress-bg"><div class="progress-fill" style="width:${p.totalMensal?Math.round(x.total/p.totalMensal*100):0}%;background:${i===0?'#85B7EB':'#B5D4F4'}"></div></div></div>
   `).join('');
   renderParcelas();
 }
@@ -901,10 +1035,7 @@ async function loadRelatorio(){
     const maxV=tops[0]?.[1]||1;
     document.getElementById('rel-categorias').innerHTML=tops.map(([cat,val])=>`
       <div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:12px">${cat}</span>
-          <span style="font-size:12px;font-weight:500">${fmt(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalG*100)}%</span></span>
-        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px">${cat}</span><span style="font-size:12px;font-weight:500">${fmt(val)} <span style="color:#aaa;font-weight:400">${Math.round(val/totalG*100)}%</span></span></div>
         <div class="progress-bg"><div class="progress-fill" style="width:${Math.round(val/maxV*100)}%;background:#85B7EB"></div></div>
       </div>
     `).join('');
