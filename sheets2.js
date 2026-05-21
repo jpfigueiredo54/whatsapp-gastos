@@ -82,6 +82,135 @@ function parseVal(str) {
   return parseFloat((str || "0").replace(/R\$\s*/g, "").replace(",", ".")) || 0;
 }
 
+async function getReceitasPorMes(mes, ano) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Receitas!A:D",
+  });
+
+  const rows = res.data.values || [];
+  const receitas = rows.slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mes && parseInt(partes[2]) === ano;
+  });
+
+  const porPessoa = {};
+  let total = 0;
+  receitas.forEach(row => {
+    const pessoa = row[3] || "Desconhecido";
+    const val = parseVal(row[1]);
+    porPessoa[pessoa] = (porPessoa[pessoa] || 0) + val;
+    total += val;
+  });
+
+  return { receitas, porPessoa, total };
+}
+
+async function getApiReceitas() {
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Receitas!A:D",
+  });
+
+  const rows = res.data.values || [];
+  const todas = rows.slice(1).filter(r => r[0]).map(row => ({
+    data: row[0],
+    valor: parseVal(row[1]),
+    descricao: row[2] || "",
+    pessoa: row[3] || "",
+  })).reverse();
+
+  const { total: totalMes, porPessoa } = await getReceitasPorMes(mesAtual, anoAtual);
+
+  return { lista: todas, totalMes, porPessoa };
+}
+
+async function getApiFluxoCaixa(meses = 6) {
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+  const n = parseInt(meses) || 6;
+
+  const historico = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const m = (mesAtual - i + 12) % 12;
+    const a = anoAtual - (mesAtual - i < 0 ? 1 : 0);
+    const { total: totalGastos } = await getGastosPorMes(m, a);
+    const { total: totalReceitas, porPessoa } = await getReceitasPorMes(m, a);
+    const nomeMes = new Date(a, m, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    historico.push({
+      mes: nomeMes,
+      receitas: totalReceitas,
+      gastos: totalGastos,
+      saldo: totalReceitas - totalGastos,
+      porPessoa,
+    });
+  }
+
+  // Receitas do mês atual detalhadas
+  const { total: receitasMes, porPessoa: porPessoaMes } = await getReceitasPorMes(mesAtual, anoAtual);
+  const { total: gastosMes } = await getGastosPorMes(mesAtual, anoAtual);
+  const saldoMes = receitasMes - gastosMes;
+
+  // Próximas entradas previstas (baseado em padrão histórico)
+  const hoje = agora.getDate();
+  const proximasEntradas = [];
+
+  // Isabella: dia 15 e dia 30
+  if (hoje < 15) {
+    proximasEntradas.push({ pessoa: "Isabella", dia: 15, diasRestantes: 15 - hoje });
+  }
+  if (hoje < 30) {
+    proximasEntradas.push({ pessoa: "Isabella", dia: 30, diasRestantes: 30 - hoje });
+    proximasEntradas.push({ pessoa: "Joao", dia: 30, diasRestantes: 30 - hoje });
+  }
+  if (hoje >= 15 && hoje < 30) {
+    proximasEntradas.push({ pessoa: "Isabella", dia: 30, diasRestantes: 30 - hoje });
+    proximasEntradas.push({ pessoa: "Joao", dia: 30, diasRestantes: 30 - hoje });
+  }
+
+  // Média de receita por pessoa dos últimos meses (para estimar próximas entradas)
+  const mediasPessoa = {};
+  historico.forEach(h => {
+    Object.entries(h.porPessoa || {}).forEach(([pessoa, val]) => {
+      if (!mediasPessoa[pessoa]) mediasPessoa[pessoa] = [];
+      if (val > 0) mediasPessoa[pessoa].push(val);
+    });
+  });
+  Object.keys(mediasPessoa).forEach(pessoa => {
+    const vals = mediasPessoa[pessoa];
+    mediasPessoa[pessoa] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  });
+
+  proximasEntradas.forEach(e => {
+    e.valorEstimado = mediasPessoa[e.pessoa] || 0;
+  });
+
+  return {
+    historico,
+    receitasMes,
+    gastosMes,
+    saldoMes,
+    porPessoaMes,
+    proximasEntradas,
+    mediasPessoa,
+  };
+}
+
 async function getRitmo() {
   const agora = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const ultimoDia = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
@@ -174,10 +303,10 @@ async function getFaturas() {
   return msg.trim();
 }
 
-async function getApiResumo() {
+async function getApiResumo(mes, ano) {
   const agora = new Date();
-  const mesAtual = agora.getMonth();
-  const anoAtual = agora.getFullYear();
+  const mesAtual = mes !== undefined ? parseInt(mes) : agora.getMonth();
+  const anoAtual = ano !== undefined ? parseInt(ano) : agora.getFullYear();
   const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
   const anoAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
   const { porCategoria, total } = await getGastosPorMes(mesAtual, anoAtual);
@@ -669,4 +798,9 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
-module.exports = { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getUltimoLancamento, deletarUltimoLancamento };
+module.exports = {
+  getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo,
+  getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes,
+  getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getUltimoLancamento, deletarUltimoLancamento,
+  getApiReceitas, getApiFluxoCaixa,
+};
