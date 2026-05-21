@@ -1,0 +1,22 @@
+{
+  "name": "Lolos Finance",
+  "short_name": "Lolos Finance",
+  "description": "Controle financeiro pessoal",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0F1430",
+  "theme_color": "#0F1430",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
