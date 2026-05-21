@@ -91,6 +91,24 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "dashboard.html"));
 });
 
+app.get("/manifest.json", (req, res) => {
+  res.setHeader("Content-Type", "application/manifest+json");
+  res.sendFile(path.join(__dirname, "manifest.json"));
+});
+
+app.get("/service-worker.js", (req, res) => {
+  res.setHeader("Content-Type", "application/javascript");
+  res.sendFile(path.join(__dirname, "service-worker.js"));
+});
+
+app.get("/icon-192.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "icon-192.png"));
+});
+
+app.get("/icon-512.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "icon-512.png"));
+});
+
 app.get("/api/resumo", async (req, res) => {
   try { res.json(await getApiResumo()); }
   catch (err) { res.status(500).json({ error: err.message }); }
