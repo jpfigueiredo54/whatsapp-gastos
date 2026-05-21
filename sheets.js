@@ -29,7 +29,7 @@ async function adicionarCategoria(categoria) {
 
   const categorias = await getCategorias();
   if (categorias.map(c => c.toLowerCase()).includes(categoria.toLowerCase())) {
-    return false; // já existe
+    return false;
   }
 
   await sheets.spreadsheets.values.append({
@@ -89,6 +89,27 @@ async function appendParcela(expense, pessoa) {
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: "Parcelas!A:H",
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values },
+  });
+}
+
+async function appendReceita(receita) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const values = [[
+    receita.data,
+    receita.valor.replace(".", ","),
+    receita.descricao,
+    receita.pessoa || "",
+  ]];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "Receitas!A:D",
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values },
@@ -230,4 +251,15 @@ async function verificarAlertaBudget(categoria, valorNovoGasto) {
   return null;
 }
 
-module.exports = { appendToSheet, appendParcela, registrarParcelasMes, getBudgets, getGastosPorMes, getGastosMesCategoria, verificarAlertaBudget, getCategorias, adicionarCategoria };
+module.exports = {
+  appendToSheet,
+  appendParcela,
+  appendReceita,
+  registrarParcelasMes,
+  getBudgets,
+  getGastosPorMes,
+  getGastosMesCategoria,
+  verificarAlertaBudget,
+  getCategorias,
+  adicionarCategoria,
+};
