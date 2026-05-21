@@ -1,8 +1,8 @@
 const express = require("express");
 const path = require("path");
-const { parseExpense } = require("./parser");
-const { appendToSheet, appendParcela, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior } = require("./sheets2");
+const { parseExpense, parseReceita } = require("./parser");
+const { appendToSheet, appendParcela, appendReceita, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getApiReceitas, getApiFluxoCaixa } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -10,6 +10,7 @@ app.use(express.json());
 
 const PESSOAS = JSON.parse(process.env.PESSOAS_JSON || "{}");
 const pendentes = {};
+const pendentesReceita = {};
 const editando = {};
 
 function identificarPessoa(numeroWhatsapp) {
@@ -34,8 +35,20 @@ const FRASES = [
   "💡 Anotado. Seu saldo foi embora, mas a memória fica.",
 ];
 
+const FRASES_RECEITA = [
+  "💰 Dinheiro entrou! Agora tenta não gastar tudo até amanhã.",
+  "💰 Receita registrada. O saldo respira aliviado por enquanto.",
+  "💰 Entrou grana! Aproveita que dura pouco.",
+  "💰 Registrado. O seu eu do futuro agradece (por enquanto).",
+  "💰 Receita anotada. Agora é não deixar ir embora rápido demais.",
+];
+
 function fraseAleatoria() {
   return FRASES[Math.floor(Math.random() * FRASES.length)];
+}
+
+function fraseReceitaAleatoria() {
+  return FRASES_RECEITA[Math.floor(Math.random() * FRASES_RECEITA.length)];
 }
 
 const AJUDA = `🤖 Comandos disponíveis:
@@ -46,6 +59,10 @@ Ex: "Almoço 45 reais Nubank crédito"
 
 💳 *Registrar parcelado:*
 Ex: "TV 12x de 350 reais Nubank"
+
+💰 *Registrar receita:*
+Ex: "recebi 5000 salário"
+Ex: "Isabella recebeu 3000"
 
 📊 */resumo*
 Resumo completo do mês atual por categoria e pessoa.
@@ -110,7 +127,13 @@ app.get("/icon-512.png", (req, res) => {
 });
 
 app.get("/api/resumo", async (req, res) => {
-  try { res.json(await getApiResumo()); }
+  try {
+    const { mes, ano } = req.query;
+    res.json(await getApiResumo(
+      mes !== undefined ? parseInt(mes) : undefined,
+      ano !== undefined ? parseInt(ano) : undefined
+    ));
+  }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -145,6 +168,19 @@ app.get("/api/fechamento-mes-anterior", async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get("/api/receitas", async (req, res) => {
+  try { res.json(await getApiReceitas()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/fluxo", async (req, res) => {
+  try {
+    const { meses } = req.query;
+    res.json(await getApiFluxoCaixa(meses || 6));
+  }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post("/parcelas/registrar", async (req, res) => {
   const secret = req.headers["x-cron-secret"];
   if (secret !== process.env.CRON_SECRET) return res.status(401).json({ error: "Não autorizado" });
@@ -167,6 +203,7 @@ app.post("/webhook", async (req, res) => {
   if (!body) return twimlReply(AJUDA);
 
   try {
+    // Fluxo de edição
     if (editando[from]) {
       if (body.toLowerCase() === "cancelar") { delete editando[from]; return twimlReply("❌ Edição cancelada."); }
       const expense = await parseExpense(body);
@@ -181,6 +218,22 @@ app.post("/webhook", async (req, res) => {
       return twimlReply(reply + `\n\n${fraseAleatoria()}`);
     }
 
+    // Confirmação de receita pendente
+    if (pendentesReceita[from]) {
+      const receita = pendentesReceita[from];
+      if (body.toLowerCase() === "sim") {
+        delete pendentesReceita[from];
+        await appendReceita(receita);
+        return twimlReply(`✅ Receita registrada!\n👤 ${receita.pessoa}\n📅 ${receita.data}\n💰 R$ ${receita.valor}\n📝 ${receita.descricao}\n\n${fraseReceitaAleatoria()}`);
+      } else if (body.toLowerCase() === "não" || body.toLowerCase() === "nao") {
+        delete pendentesReceita[from];
+        return twimlReply("❌ Receita cancelada.");
+      } else {
+        return twimlReply(`Responda *sim* para confirmar ou *não* para cancelar.\n\n📋 Receita pendente:\n👤 ${receita.pessoa}\n💰 R$ ${receita.valor}\n📝 ${receita.descricao}`);
+      }
+    }
+
+    // Confirmação de gasto pendente
     if (pendentes[from]) {
       const expense = pendentes[from];
       if (body.toLowerCase() === "sim") {
@@ -205,6 +258,7 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
+    // Comandos
     if (body.toLowerCase() === "/ajuda") return twimlReply(AJUDA);
     if (body.toLowerCase() === "/resumo") return twimlReply(await getResumoMes());
     if (body.toLowerCase().startsWith("/resumo ")) return twimlReply(await getResumoCategoria(body.slice(8).trim()));
@@ -235,6 +289,19 @@ app.post("/webhook", async (req, res) => {
       return twimlReply(`✏️ Último lançamento:\n📅 ${ultimo.data}\n💰 R$ ${ultimo.valor}\n🏷️ ${ultimo.categoria}\n📝 ${ultimo.descricao}\n💳 ${ultimo.metodo}\n\nMande o gasto corrigido ou *cancelar* para sair.`);
     }
 
+    // Detectar receita antes de tentar gasto
+    const receitaKeywords = ["recebi", "recebeu", "receita", "salário", "salario", "entrada de", "caiu o"];
+    const isReceita = receitaKeywords.some(kw => body.toLowerCase().includes(kw));
+
+    if (isReceita) {
+      const receita = await parseReceita(body);
+      if (receita) {
+        pendentesReceita[from] = receita;
+        return twimlReply(`📋 Confirmar receita?\n\n👤 ${receita.pessoa}\n📅 ${receita.data}\n💰 R$ ${receita.valor}\n📝 ${receita.descricao}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
+      }
+    }
+
+    // Tentar parsear como gasto
     const expense = await parseExpense(body);
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
