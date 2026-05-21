@@ -166,38 +166,40 @@ async function getApiFluxoCaixa(meses = 6) {
   const { total: gastosMes } = await getGastosPorMes(mesAtual, anoAtual);
   const saldoMes = receitasMes - gastosMes;
 
-  // Próximas entradas previstas (baseado em padrão histórico)
+  // Próximas entradas previstas — lê da aba ReceitasPrevistas
   const hoje = agora.getDate();
   const proximasEntradas = [];
 
-  // Isabella: dia 15 e dia 30
-  if (hoje < 15) {
-    proximasEntradas.push({ pessoa: "Isabella", dia: 15, diasRestantes: 15 - hoje });
-  }
-  if (hoje < 30) {
-    proximasEntradas.push({ pessoa: "Isabella", dia: 30, diasRestantes: 30 - hoje });
-    proximasEntradas.push({ pessoa: "Joao", dia: 30, diasRestantes: 30 - hoje });
-  }
-  if (hoje >= 15 && hoje < 30) {
-    proximasEntradas.push({ pessoa: "Isabella", dia: 30, diasRestantes: 30 - hoje });
-    proximasEntradas.push({ pessoa: "Joao", dia: 30, diasRestantes: 30 - hoje });
-  }
-
-  // Média de receita por pessoa dos últimos meses (para estimar próximas entradas)
-  const mediasPessoa = {};
-  historico.forEach(h => {
-    Object.entries(h.porPessoa || {}).forEach(([pessoa, val]) => {
-      if (!mediasPessoa[pessoa]) mediasPessoa[pessoa] = [];
-      if (val > 0) mediasPessoa[pessoa].push(val);
+  try {
+    const authPrev = getAuth();
+    const sheetsPrev = google.sheets({ version: "v4", auth: authPrev });
+    const resPrev = await sheetsPrev.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: "ReceitasPrevistas!A:D",
     });
-  });
-  Object.keys(mediasPessoa).forEach(pessoa => {
-    const vals = mediasPessoa[pessoa];
-    mediasPessoa[pessoa] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-  });
+    const rowsPrev = (resPrev.data.values || []).slice(1).filter(r => r[0] && r[1]);
+    rowsPrev.forEach(row => {
+      const pessoa = row[0] || "";
+      const dia = parseInt(row[1] || "0");
+      const descricao = row[2] || "Receita";
+      const valor = parseVal(row[3] || "0");
+      if (dia > hoje) {
+        proximasEntradas.push({
+          pessoa,
+          dia,
+          descricao,
+          diasRestantes: dia - hoje,
+          valorEstimado: valor,
+        });
+      }
+    });
+    proximasEntradas.sort((a, b) => a.diasRestantes - b.diasRestantes);
+  } catch(e) {
+    console.error("Erro ao ler ReceitasPrevistas:", e);
+  }
 
   proximasEntradas.forEach(e => {
-    e.valorEstimado = mediasPessoa[e.pessoa] || 0;
+    if (!e.valorEstimado) e.valorEstimado = 0;
   });
 
   return {
@@ -207,7 +209,6 @@ async function getApiFluxoCaixa(meses = 6) {
     saldoMes,
     porPessoaMes,
     proximasEntradas,
-    mediasPessoa,
   };
 }
 
