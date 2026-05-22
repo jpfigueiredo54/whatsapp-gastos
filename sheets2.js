@@ -420,7 +420,7 @@ async function getApiFaturas() {
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-  const resCartoes = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Cartões!A:D" });
+  const resCartoes = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Cartões!A:E" });
   const cartoes = (resCartoes.data.values || []).slice(1).filter(r => r[0] && r[2]);
   const resGastos = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
   const gastos = (resGastos.data.values || []).slice(1);
@@ -437,9 +437,8 @@ async function getApiFaturas() {
     const nomeCartao = cartao[0];
     const diaFechamento = parseInt(cartao[2]);
     const limiteCartao = cartao[3] ? parseFloat(cartao[3].toString().replace(",", ".")) : null;
+    const bancoEmissor = cartao[4] || "";
     const { inicio, fim, diasRestantes, pctCiclo, totalDias, diasDecorridos } = calcularCicloFatura(diaFechamento);
-    const gastosCartao = gastos.filter(row => {
-      if (!row[0] || !row[5]) return false;
       const d = parsearData(row[0]);
       if (!d) return false;
       return (row[5] || "").toLowerCase().includes(nomeCartao.toLowerCase()) && d >= inicio && d <= fim;
@@ -474,6 +473,7 @@ async function getApiFaturas() {
     result.push({
       nome: nomeCartao, total, aVista, parcelas,
       limite: limiteCartao,
+      banco: bancoEmissor,
       diasRestantes, pctCiclo, totalDias, diasDecorridos,
       inicioFormatado: formatarData(inicio),
       fimFormatado: formatarData(fim),
