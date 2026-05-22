@@ -495,6 +495,7 @@ body {
         <div class="card-sm"><div class="lbl">Saídas</div><div class="val r" id="fluxo-gastos">—</div></div>
       </div>
       <div class="period-toggle">
+        <button class="period-btn" onclick="setMesesFluxo(1,this)">1m</button>
         <button class="period-btn" onclick="setMesesFluxo(3,this)">3m</button>
         <button class="period-btn active" onclick="setMesesFluxo(6,this)">6m</button>
         <button class="period-btn" onclick="setMesesFluxo(12,this)">12m</button>
@@ -601,6 +602,7 @@ body {
       </div>
       <div class="cards-row" id="rel-cards"></div>
       <div class="period-toggle">
+        <button class="period-btn" onclick="setMesesRel(1,this)">1m</button>
         <button class="period-btn" onclick="setMesesRel(3,this)">3m</button>
         <button class="period-btn active" onclick="setMesesRel(6,this)">6m</button>
         <button class="period-btn" onclick="setMesesRel(12,this)">12m</button>
