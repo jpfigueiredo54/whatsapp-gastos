@@ -339,7 +339,19 @@ async function getApiResumo(mes, ano) {
     const nomeMes = new Date(a, m, 1).toLocaleDateString("pt-BR", { month: "short" });
     evolucao.push({ mes: nomeMes, total: t });
   }
-  return { total, totalMesAnterior: totalAnterior, porCategoria, porPessoa, budgets, score, evolucao };
+  // Receitas do mês atual
+  const { total: receitasMes } = await getReceitasPorMes(mesAtual, anoAtual);
+
+  // Receitas evolução (últimos 6 meses)
+  const receitasEvolucao = [];
+  for (let i = 5; i >= 0; i--) {
+    const m = (mesAtual - i + 12) % 12;
+    const a = anoAtual - (mesAtual - i < 0 ? 1 : 0);
+    const { total: tr } = await getReceitasPorMes(m, a);
+    receitasEvolucao.push(tr);
+  }
+
+  return { total, totalMesAnterior: totalAnterior, porCategoria, porPessoa, budgets, score, evolucao, receitasMes, receitasEvolucao };
 }
 
 async function getApiParcelas() {
