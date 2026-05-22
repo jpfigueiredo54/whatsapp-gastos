@@ -1,29 +1,9 @@
-const CACHE_NAME = 'lolos-finance-v9';
-const ASSETS = ['/dashboard', '/icon-192.png', '/icon-512.png', '/manifest.json'];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+// Service worker desativado temporariamente
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
   );
   self.clients.claim();
 });
-
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
-  );
-});
+self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
