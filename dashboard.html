@@ -676,8 +676,8 @@ function fmtHero(v) {
   const p = s.split(',');
   return [p[0], p[1]||'00'];
 }
-function pctClass(p) { return p>=100?'r':p>=80?'au':'g'; }
-function barColor(p) { return p>=100?'#E24B4A':p>=80?'#C9A84C':'#639922'; }
+function pctClass(p) { return p>100?'r':p>=80?'au':'g'; }
+function barColor(p) { return p>100?'#E24B4A':p>=80?'#C9A84C':'#639922'; }
 function parseVal(str) { return parseFloat((str||'0').replace(/R\$\s*/g,'').replace(',','.')) || 0; }
 function catIcon(cat) {
   const m={alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',farmácia:'ti-pill',mercado:'ti-building-store',aluguel:'ti-home',luz:'ti-bolt',internet:'ti-wifi',outro:'ti-dots'};
