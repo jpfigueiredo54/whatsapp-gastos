@@ -1124,7 +1124,57 @@ async function checkFechamentoBanner() {
   } catch(e) {}
 }
 
-// ── FATURAS ───────────────────────────────────
+// ── CARD ART ──────────────────────────────────
+function cardArtSVG(banco, nome) {
+  const b = (banco||'').toLowerCase();
+  if (b.includes('itaú') || b.includes('itau')) {
+    return `<svg width="56" height="36" viewBox="0 0 56 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="border-radius:6px;flex-shrink:0">
+      <rect width="56" height="36" rx="4" fill="#111"/>
+      <line x1="0" y1="36" x2="36" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <line x1="6" y1="36" x2="42" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <line x1="12" y1="36" x2="48" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <line x1="18" y1="36" x2="54" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <line x1="24" y1="36" x2="60" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <line x1="-6" y1="36" x2="30" y2="0" stroke="#1e1e1e" stroke-width="1.5"/>
+      <circle cx="10" cy="9" r="5" fill="#eb001b" opacity="0.9"/>
+      <circle cx="16" cy="9" r="5" fill="#f79e1b" opacity="0.9"/>
+      <text x="49" y="7" text-anchor="end" font-size="4.5" fill="#888" font-family="system-ui" letter-spacing="0.5">black</text>
+      <rect x="22" y="12" width="9" height="7" rx="1.5" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+      <line x1="22" y1="15.5" x2="31" y2="15.5" stroke="#555" stroke-width="0.5"/>
+      <line x1="26.5" y1="12" x2="26.5" y2="19" stroke="#555" stroke-width="0.5"/>
+      <path d="M34 13.5 Q36 15.5 34 17.5" stroke="#666" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+      <path d="M35.5 12.5 Q38.5 15.5 35.5 18.5" stroke="#555" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+      <text x="4" y="29" font-size="4" fill="#ccc" font-family="system-ui" font-weight="700" letter-spacing="0.3">LATAM</text>
+      <text x="4" y="34" font-size="4.5" fill="#fff" font-family="system-ui" font-weight="700" letter-spacing="0.3">PASS</text>
+      <text x="52" y="33" text-anchor="end" font-size="5" fill="#fff" font-family="system-ui" font-weight="700" letter-spacing="0.2">itaú</text>
+    </svg>`;
+  }
+  if (b.includes('nubank')) {
+    const inicial = (nome||'N').slice(0,1).toUpperCase();
+    return `<svg width="56" height="36" viewBox="0 0 56 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="border-radius:6px;flex-shrink:0">
+      <rect width="56" height="36" rx="4" fill="#0a0010"/>
+      <rect width="56" height="36" rx="4" fill="url(#nuglow)" opacity="0.5"/>
+      <defs>
+        <radialGradient id="nuglow" cx="80%" cy="20%" r="60%">
+          <stop offset="0%" stop-color="#820AD1" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#0a0010" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="7" y="12" width="9" height="7" rx="1.5" fill="#1e1e2e" stroke="#3d1060" stroke-width="0.5"/>
+      <line x1="7" y1="15.5" x2="16" y2="15.5" stroke="#333" stroke-width="0.5"/>
+      <line x1="11.5" y1="12" x2="11.5" y2="19" stroke="#333" stroke-width="0.5"/>
+      <text x="49" y="8" text-anchor="end" font-size="6" fill="#c084fc" font-family="system-ui" font-weight="700">Nu</text>
+      <rect x="0" y="33" width="56" height="3" rx="0" fill="#7c3aed" opacity="0.6"/>
+      <text x="4" y="33" font-size="5" fill="#a855f7" font-family="system-ui" font-weight="600" letter-spacing="0.3">ultravioleta</text>
+    </svg>`;
+  }
+  // fallback genérico
+  return `<svg width="56" height="36" viewBox="0 0 56 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="border-radius:6px;flex-shrink:0">
+    <rect width="56" height="36" rx="4" fill="#18181f" stroke="#2a2a35" stroke-width="0.5"/>
+    <rect x="7" y="12" width="9" height="7" rx="1.5" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+    <text x="28" y="31" text-anchor="middle" font-size="5" fill="#6b6b7a" font-family="system-ui">${(nome||'').slice(0,8)}</text>
+  </svg>`;
+}
 function renderFaturas() {
   if (!cache.faturas) return;
   const f = cache.faturas;
@@ -1162,10 +1212,15 @@ function renderFaturas() {
       </div>`).join('');
     return `<div class="fat-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
-        <div class="fat-name">${c.nome}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${cardArtSVG(c.banco, c.nome)}
+          <div>
+            <div class="fat-name">${c.nome}</div>
+            <div class="fat-cycle">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias</div>
+          </div>
+        </div>
         ${pct !== null ? `<span class="badge ${pctClass(pct)}">${pct}%</span>` : ''}
       </div>
-      <div class="fat-cycle">Ciclo: ${c.inicioFormatado} a ${c.fimFormatado} · ${c.diasRestantes} dias</div>
       <div class="fat-grid">
         <div class="fat-metric"><div class="fl">À vista</div><div class="fv">${fmt(c.aVista)}</div></div>
         <div class="fat-metric"><div class="fl">Parcelas</div><div class="fv">${fmt(c.parcelas)}</div></div>
