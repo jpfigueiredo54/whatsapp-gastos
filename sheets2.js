@@ -218,22 +218,25 @@ async function getApiFluxoCaixa(meses = 6) {
     console.error("Erro ao ler Config:", e);
   }
 
-  // Saldo acumulado mês a mês
-  let acumulado = saldoInicial;
-  const historicoAcumulado = historico.map(h => {
-    acumulado += h.saldo;
-    return { ...h, acumulado };
+  const historicoFiltrado = historico.filter(h => h.receitas > 0 || h.gastos > 0);
+  const historicoFinal = historicoFiltrado.length > 0 ? historicoFiltrado : historico.slice(-1);
+
+  // Recalcula acumulado apenas sobre meses com dados
+  let acumuladoFinal = saldoInicial;
+  const historicoAcumuladoFinal = historicoFinal.map(h => {
+    acumuladoFinal += h.saldo;
+    return { ...h, acumulado: acumuladoFinal };
   });
 
   return {
-    historico: historicoAcumulado,
+    historico: historicoAcumuladoFinal,
     receitasMes,
     gastosMes,
     saldoMes,
     porPessoaMes,
     proximasEntradas,
     saldoInicial,
-    saldoAcumulado: acumulado,
+    saldoAcumulado: acumuladoFinal,
   };
 }
 
@@ -537,16 +540,18 @@ async function getApiRelatorio(meses) {
     const nomeMes = new Date(a, m, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
     evolucao.push({ mes: nomeMes, total, porCategoria });
   }
-  const todasCategorias = [...new Set(evolucao.flatMap(e => Object.keys(e.porCategoria)))];
+  const evolucaoFiltrada = evolucao.filter(e => e.total > 0);
+  const evolucaoFinal = evolucaoFiltrada.length > 0 ? evolucaoFiltrada : evolucao.slice(-1);
+  const todasCategorias = [...new Set(evolucaoFinal.flatMap(e => Object.keys(e.porCategoria)))];
   const totalPorCategoria = {};
   todasCategorias.forEach(cat => {
-    totalPorCategoria[cat] = evolucao.reduce((acc, e) => acc + (e.porCategoria[cat] || 0), 0);
+    totalPorCategoria[cat] = evolucaoFinal.reduce((acc, e) => acc + (e.porCategoria[cat] || 0), 0);
   });
-  const totalGeral = evolucao.reduce((acc, e) => acc + e.total, 0);
-  const media = totalGeral / n;
-  const maiorMes = evolucao.reduce((a, b) => b.total > a.total ? b : a, evolucao[0]);
+  const totalGeral = evolucaoFinal.reduce((acc, e) => acc + e.total, 0);
+  const media = totalGeral / (evolucaoFinal.length || 1);
+  const maiorMes = evolucaoFinal.reduce((a, b) => b.total > a.total ? b : a, evolucaoFinal[0]);
   const categoriaLider = Object.entries(totalPorCategoria).sort((a, b) => b[1] - a[1])[0];
-  return { evolucao, totalPorCategoria, totalGeral, media, maiorMes, categoriaLider, todasCategorias };
+  return { evolucao: evolucaoFinal, totalPorCategoria, totalGeral, media, maiorMes, categoriaLider, todasCategorias };
 }
 
 async function getResumoMes() {
