@@ -394,9 +394,31 @@ body {
 .comp-table td { padding: 6px 8px; border-bottom: 0.5px solid var(--bg3); white-space: nowrap; text-align: right; color: var(--text2); }
 .comp-table td:first-child { text-align: left; font-weight: 500; color: var(--text); }
 
-@media(max-width:400px) {
-  .page-header .big-value { font-size: 36px; }
+/* ── SKELETON ───────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
+.skel {
+  background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+.skel-line { height: 12px; margin-bottom: 8px; }
+.skel-line:last-child { margin-bottom: 0; width: 60%; }
+.skel-circle { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+.skel-card { height: 60px; border-radius: var(--radius-sm); }
+
+/* ── PULL TO REFRESH ────────────────────────── */
+.ptr-indicator {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; height: 0; overflow: hidden;
+  transition: height 0.2s; color: var(--text3); font-size: 12px;
+}
+.ptr-indicator.visible { height: 48px; }
+.ptr-spinner { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -423,8 +445,14 @@ body {
 
     <!-- VISÃO GERAL -->
     <div class="page active" id="page-overview">
+      <div class="ptr-indicator" id="ptr-indicator">
+        <i class="ti ti-refresh ptr-spinner"></i> Atualizando...
+      </div>
       <div class="page-header">
-        <div class="label">Saldo do mês</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="label">Saldo do mês</div>
+          <select class="fsel" id="ov-mes" onchange="onMesChange()" style="font-size:11px;padding:5px 8px;background:var(--bg2)"></select>
+        </div>
         <div class="big-value" id="ov-saldo"><em>R$</em>—</div>
         <div class="sub" id="ov-sub"><i class="ti ti-loader" style="font-size:12px"></i> carregando...</div>
       </div>
@@ -485,6 +513,9 @@ body {
 
     <!-- FLUXO DE CAIXA -->
     <div class="page" id="page-fluxo">
+      <div class="ptr-indicator" id="ptr-fluxo">
+        <i class="ti ti-refresh ptr-spinner"></i> Atualizando...
+      </div>
       <div class="page-header">
         <div class="label">Fluxo de caixa</div>
         <div class="big-value" id="fluxo-saldo-val"><em>R$</em>—</div>
@@ -493,6 +524,7 @@ body {
       <div class="cards-row">
         <div class="card-sm"><div class="lbl">Entradas</div><div class="val g" id="fluxo-receitas">—</div></div>
         <div class="card-sm"><div class="lbl">Saídas</div><div class="val r" id="fluxo-gastos">—</div></div>
+        <div class="card-sm"><div class="lbl">Acumulado</div><div class="val au" id="fluxo-acumulado" style="font-size:9px">—</div></div>
       </div>
       <div class="period-toggle">
         <button class="period-btn" onclick="setMesesFluxo(1,this)">1m</button>
@@ -685,6 +717,61 @@ body {
 
 <script>
 const SENHA = 'lolosfinance';
+
+// ── SKELETON ──────────────────────────────────
+function skelLines(n=3) {
+  return Array(n).fill(0).map((_,i) => `<div class="skel skel-line" style="width:${i===n-1?'55%':'100%'}"></div>`).join('');
+}
+function skelTx(n=3) {
+  return Array(n).fill(0).map(() => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--bg3)">
+      <div class="skel skel-circle"></div>
+      <div style="flex:1">${skelLines(2)}</div>
+      <div class="skel skel-line" style="width:60px"></div>
+    </div>`).join('');
+}
+function showSkeletons() {
+  document.getElementById('ov-categorias').innerHTML = `<div style="padding:4px 0">${skelLines(4)}</div>`;
+  document.getElementById('ov-transacoes').innerHTML = skelTx(4);
+  document.getElementById('ov-faturas-mini').innerHTML = skelLines(3);
+  document.getElementById('ov-pessoas').innerHTML = skelLines(2);
+}
+
+// ── PULL TO REFRESH ───────────────────────────
+let ptrStartY = 0;
+let ptrActive = false;
+document.addEventListener('touchstart', e => {
+  if (window.scrollY === 0) ptrStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (ptrStartY === 0) return;
+  const dy = e.touches[0].clientY - ptrStartY;
+  if (dy > 60 && !ptrActive) {
+    ptrActive = true;
+    const page = document.querySelector('.page.active')?.id;
+    const ind = page === 'page-fluxo' ? 'ptr-fluxo' : 'ptr-indicator';
+    const el = document.getElementById(ind);
+    if (el) el.classList.add('visible');
+  }
+}, { passive: true });
+document.addEventListener('touchend', async () => {
+  if (!ptrActive) { ptrStartY = 0; return; }
+  ptrActive = false;
+  ptrStartY = 0;
+  const page = document.querySelector('.page.active')?.id;
+  if (page === 'page-overview') {
+    showSkeletons();
+    cache.resumo = null; cache.faturas = null; cache.parcelas = null;
+    await initDashboard();
+  } else if (page === 'page-fluxo') {
+    cache.fluxo = null;
+    await loadFluxo();
+  } else if (page === 'page-relatorios') {
+    cache.relatorio = null;
+    await loadRelatorio();
+  }
+  document.querySelectorAll('.ptr-indicator').forEach(el => el.classList.remove('visible'));
+});
 let cache = { resumo:null, parcelas:null, faturas:null, transacoes:[], todasTransacoes:[], fluxo:null, receitas:null };
 let catFiltroTipo = 'todos';
 let txTipoFiltro = 'todos';
@@ -804,6 +891,7 @@ function setHeroValue(elId, value) {
 async function initDashboard() {
   populateMes('ov-mes');
   populateMes('tx-mes');
+  showSkeletons();
   try {
     const [resumo, parcelas, faturas, transacoes] = await Promise.all([
       fetch('/api/resumo').then(r => r.json()),
@@ -1258,6 +1346,12 @@ function renderFluxo() {
   setHeroValue('fluxo-saldo-val', f.saldoMes);
   document.getElementById('fluxo-receitas').textContent = fmt(f.receitasMes);
   document.getElementById('fluxo-gastos').textContent = fmt(f.gastosMes);
+  const acumEl = document.getElementById('fluxo-acumulado');
+  if (acumEl) {
+    acumEl.textContent = fmt(f.saldoAcumulado || 0);
+    acumEl.className = 'val ' + ((f.saldoAcumulado||0) >= 0 ? 'g' : 'r');
+    acumEl.style.fontSize = '9px';
+  }
   const subEl = document.getElementById('fluxo-saldo-sub');
   subEl.innerHTML = f.saldoMes >= 0
     ? `<i class="ti ti-trending-up" style="font-size:12px"></i> no azul este mês`
@@ -1312,7 +1406,10 @@ function renderFluxo() {
     <div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
         <span style="font-size:12px;font-weight:${i===0?'500':'400'};color:${i===0?'var(--text)':'var(--text2)'}">${h.mes}</span>
-        <span style="font-size:12px;font-weight:500;color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo>=0?'+':''}${fmt(h.saldo)}</span>
+        <div style="text-align:right">
+          <span style="font-size:12px;font-weight:500;color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo>=0?'+':''}${fmt(h.saldo)}</span>
+          ${h.acumulado !== undefined ? `<div style="font-size:10px;color:var(--text3)">acum. ${fmt(h.acumulado)}</div>` : ''}
+        </div>
       </div>
       <div style="font-size:10px;color:var(--text3)"><span style="color:rgba(74,222,128,0.7)">↑ ${fmt(h.receitas)}</span> · <span style="color:rgba(248,113,113,0.7)">↓ ${fmt(h.gastos)}</span></div>
     </div>`).join('');
