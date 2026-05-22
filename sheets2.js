@@ -202,13 +202,38 @@ async function getApiFluxoCaixa(meses = 6) {
     if (!e.valorEstimado) e.valorEstimado = 0;
   });
 
+  // Saldo inicial da aba Config
+  let saldoInicial = 0;
+  try {
+    const authCfg = getAuth();
+    const sheetsCfg = google.sheets({ version: "v4", auth: authCfg });
+    const resCfg = await sheetsCfg.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: "Config!A:B",
+    });
+    const rowsCfg = (resCfg.data.values || []).slice(1);
+    const cfgRow = rowsCfg.find(r => (r[0]||'').toLowerCase() === 'saldo_inicial');
+    if (cfgRow) saldoInicial = parseVal(cfgRow[1] || '0');
+  } catch(e) {
+    console.error("Erro ao ler Config:", e);
+  }
+
+  // Saldo acumulado mês a mês
+  let acumulado = saldoInicial;
+  const historicoAcumulado = historico.map(h => {
+    acumulado += h.saldo;
+    return { ...h, acumulado };
+  });
+
   return {
-    historico,
+    historico: historicoAcumulado,
     receitasMes,
     gastosMes,
     saldoMes,
     porPessoaMes,
     proximasEntradas,
+    saldoInicial,
+    saldoAcumulado: acumulado,
   };
 }
 
