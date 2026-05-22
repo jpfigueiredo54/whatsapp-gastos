@@ -677,7 +677,7 @@ function setHeroValue(elId, value) {
   if (!el) return;
   const neg = value < 0;
   const [int, dec] = fmtHero(value);
-  el.innerHTML = `<em>${neg?'- ':''}R$</em>${int},${dec}`;
+  el.innerHTML = `<em>${neg?'- ':''}R$</em> ${int},${dec}`;
   el.style.color = neg ? 'var(--red)' : 'var(--text)';
 }
 
