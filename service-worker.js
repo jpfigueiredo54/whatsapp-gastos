@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lolos-finance-v5';
+const CACHE_NAME = 'lolos-finance-v6';
 const ASSETS = ['/dashboard', '/icon-192.png', '/icon-512.png', '/manifest.json'];
 
 self.addEventListener('install', event => {
