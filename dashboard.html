@@ -426,7 +426,7 @@ body {
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-wrap">
-    <div class="login-logo">L</div>
+    <img src="/icon-192.png" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 32px rgba(201,168,76,0.3);" alt="Lolos Finance">
     <div>
       <div class="login-title">Lolos Finance</div>
       <div class="login-sub">Controle financeiro pessoal</div>
@@ -994,8 +994,8 @@ function renderOverview() {
       data: {
         labels: evolucao.map(e => e.mes),
         datasets: [
-          { label:'Receitas', data: receitasEvolucao, backgroundColor: (ctx2) => { const i = ctx2.dataIndex; return i === receitasEvolucao.length-1 ? 'rgba(74,222,128,0.9)' : 'rgba(74,222,128,0.25)'; }, borderRadius:4, borderSkipped:false },
-          { label:'Gastos', data: evolucao.map(e => e.total), backgroundColor: (ctx2) => { const i = ctx2.dataIndex; return i === evolucao.length-1 ? 'rgba(248,113,113,0.9)' : 'rgba(248,113,113,0.25)'; }, borderRadius:4, borderSkipped:false },
+          { label:'Receitas', data: receitasEvolucao, backgroundColor: receitasEvolucao.map((v,i,arr) => i===arr.length-1?'rgba(74,222,128,0.9)':'rgba(74,222,128,0.25)'), borderRadius:4, borderSkipped:false },
+          { label:'Gastos', data: evolucao.map(e => e.total), backgroundColor: evolucao.map((e,i,arr) => i===arr.length-1?'rgba(248,113,113,0.9)':'rgba(248,113,113,0.25)'), borderRadius:4, borderSkipped:false },
         ]
       },
       options: {
@@ -1422,8 +1422,8 @@ function renderFluxo() {
       data: {
         labels: (f.historico||[]).map(h => h.mes),
         datasets: [
-          { label:'Receitas', data:(f.historico||[]).map(h => h.receitas), backgroundColor:(ctx2) => { const i=ctx2.dataIndex; return i===f.historico.length-1?'rgba(74,222,128,0.9)':'rgba(74,222,128,0.25)'; }, borderRadius:4, borderSkipped:false },
-          { label:'Gastos', data:(f.historico||[]).map(h => h.gastos), backgroundColor:(ctx2) => { const i=ctx2.dataIndex; return i===f.historico.length-1?'rgba(248,113,113,0.9)':'rgba(248,113,113,0.25)'; }, borderRadius:4, borderSkipped:false },
+          { label:'Receitas', data:(f.historico||[]).map(h => h.receitas), backgroundColor: (f.historico||[]).map((h,i,arr) => i===arr.length-1?'rgba(74,222,128,0.9)':'rgba(74,222,128,0.25)'), borderRadius:4, borderSkipped:false },
+          { label:'Gastos', data:(f.historico||[]).map(h => h.gastos), backgroundColor: (f.historico||[]).map((h,i,arr) => i===arr.length-1?'rgba(248,113,113,0.9)':'rgba(248,113,113,0.25)'), borderRadius:4, borderSkipped:false },
         ]
       },
       options: {
@@ -1530,11 +1530,21 @@ async function loadRelatorio() {
     const ctx = document.getElementById('rel-chart');
     if (ctx) {
       const evol = data.evolucao || [];
+      const maiorIdx = evol.reduce((mi, e, i, arr) => e.total > arr[mi].total ? i : mi, 0);
       charts.rel = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: evol.map(e => e.mes),
-          datasets: [{ data: evol.map(e => e.total), backgroundColor: evol.map((e,i,arr) => i===arr.length-1?'var(--gold)':i===evol.findIndex(x=>x===data.maiorMes)?'rgba(248,113,113,0.7)':'rgba(201,168,76,0.25)'), borderRadius:4, borderSkipped:false }]
+          datasets: [{ 
+            data: evol.map(e => e.total), 
+            backgroundColor: evol.map((e,i,arr) => {
+              if (i === arr.length-1) return '#C9A84C';
+              if (i === maiorIdx) return 'rgba(248,113,113,0.7)';
+              return 'rgba(201,168,76,0.25)';
+            }), 
+            borderRadius:4, 
+            borderSkipped:false 
+          }]
         },
         options: {
           responsive:true, maintainAspectRatio:false,
