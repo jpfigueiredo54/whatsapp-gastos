@@ -443,6 +443,66 @@ body {
 <div id="app">
   <div class="main">
 
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div style="padding: 56px 20px 0;">
+        <div style="font-size:11px;color:var(--text3)" id="home-greeting">Olá 👋</div>
+        <div style="font-size:24px;font-weight:300;color:var(--text);letter-spacing:-0.5px;margin-top:2px">Olá, <strong style="font-weight:600;color:var(--gold)" id="home-name">—</strong></div>
+      </div>
+
+      <!-- Avatares -->
+      <div style="display:flex;gap:16px;padding:20px 20px 0;align-items:flex-start">
+        <div onclick="selectPessoa('Joao',this)" id="avatar-joao" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+          <div style="width:64px;height:64px;border-radius:50%;padding:2.5px;background:linear-gradient(135deg,#C9A84C,#e8c76a)">
+            <div style="width:100%;height:100%;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:var(--text);border:2px solid var(--bg)">JP</div>
+          </div>
+          <span style="font-size:11px;font-weight:500;color:var(--gold)">Joao</span>
+        </div>
+        <div onclick="selectPessoa('Isabella',this)" id="avatar-isabella" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+          <div id="avatar-isabella-ring" style="width:64px;height:64px;border-radius:50%;padding:2.5px;background:var(--border)">
+            <div style="width:100%;height:100%;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:var(--text);border:2px solid var(--bg)">IS</div>
+          </div>
+          <span id="avatar-isabella-name" style="font-size:11px;font-weight:500;color:var(--text3)">Isabella</span>
+        </div>
+      </div>
+
+      <!-- Saldo -->
+      <div style="padding:16px 20px 0">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Saldo do mês</div>
+        <div style="font-size:34px;font-weight:300;letter-spacing:-1px;color:var(--text)" id="home-saldo"><em style="font-size:17px;color:var(--text3);vertical-align:super;font-style:normal">R$</em>—</div>
+        <div style="font-size:11px;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px" id="home-sub"></div>
+      </div>
+
+      <!-- Grid tabs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px">
+        <div onclick="showPage('overview')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center"><i class="ti ti-layout-dashboard" style="font-size:18px;color:#C9A84C"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Visão geral</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Resumo do mês</div></div>
+        </div>
+        <div onclick="showPage('fluxo')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(74,222,128,0.12);display:flex;align-items:center;justify-content:center"><i class="ti ti-arrows-exchange" style="font-size:18px;color:#4ade80"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Fluxo</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Receitas e gastos</div></div>
+        </div>
+        <div onclick="showPage('faturas')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(96,165,250,0.12);display:flex;align-items:center;justify-content:center"><i class="ti ti-credit-card" style="font-size:18px;color:#60a5fa"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Faturas</div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="home-fat-sub">—</div></div>
+        </div>
+        <div onclick="showPage('transacoes')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(248,113,113,0.12);display:flex;align-items:center;justify-content:center"><i class="ti ti-list" style="font-size:18px;color:#f87171"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Gastos</div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="home-tx-sub">—</div></div>
+        </div>
+        <div onclick="showPage('parcelas')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(167,139,250,0.12);display:flex;align-items:center;justify-content:center"><i class="ti ti-repeat" style="font-size:18px;color:#a78bfa"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Parcelas</div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="home-par-sub">—</div></div>
+        </div>
+        <div onclick="showPage('relatorios')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:18px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(167,139,250,0.12);display:flex;align-items:center;justify-content:center"><i class="ti ti-chart-bar" style="font-size:18px;color:#a78bfa"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Relatórios</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Análise histórica</div></div>
+        </div>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+
     <!-- VISÃO GERAL -->
     <div class="page active" id="page-overview">
       <div class="ptr-indicator" id="ptr-indicator">
@@ -665,8 +725,8 @@ body {
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <div class="bnav-inner">
-      <div class="bnav-item active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i><span>Início</span></div>
-      <div class="bnav-item" onclick="showPage('fluxo')"><i class="ti ti-arrows-exchange"></i><span>Fluxo</span></div>
+      <div class="bnav-item active" onclick="showPage('home')"><i class="ti ti-home"></i><span>Home</span></div>
+      <div class="bnav-item" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i><span>Resumo</span></div>
       <div class="bnav-item" onclick="showPage('faturas')"><i class="ti ti-credit-card"></i><span>Faturas</span></div>
       <div class="bnav-item" onclick="showPage('transacoes')"><i class="ti ti-list"></i><span>Gastos</span></div>
       <div class="bnav-item" onclick="showPage('relatorios')"><i class="ti ti-chart-bar"></i><span>Relatórios</span></div>
@@ -826,11 +886,13 @@ function logout() {
 }
 
 // ── NAVIGATION ────────────────────────────────
+let pessoaAtiva = localStorage.getItem('lolos_pessoa') || 'Joao';
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  const bIdx = {overview:0,fluxo:1,faturas:2,transacoes:3,relatorios:4};
+  const bIdx = {home:0,overview:1,faturas:2,transacoes:3,relatorios:4};
   const bi = bIdx[id];
   if (bi !== undefined) document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');
   window.scrollTo(0, 0);
@@ -838,6 +900,103 @@ function showPage(id) {
   if (id === 'relatorios' && !cache.relatorio) loadRelatorio();
   if (id === 'fluxo' && !cache.fluxo) loadFluxo();
   if (id === 'parcelas') renderParcelas();
+  if (id === 'home') renderHome();
+}
+
+function selectPessoa(nome, el) {
+  pessoaAtiva = nome;
+  localStorage.setItem('lolos_pessoa', nome);
+  const joaoRing = document.querySelector('#avatar-joao > div');
+  const joaoName = document.querySelector('#avatar-joao span');
+  const isRing = document.getElementById('avatar-isabella-ring');
+  const isName = document.getElementById('avatar-isabella-name');
+  if (nome === 'Joao') {
+    joaoRing.style.background = 'linear-gradient(135deg,#C9A84C,#e8c76a)';
+    joaoName.style.color = 'var(--gold)';
+    isRing.style.background = 'var(--border)';
+    isName.style.color = 'var(--text3)';
+  } else {
+    joaoRing.style.background = 'var(--border)';
+    joaoName.style.color = 'var(--text3)';
+    isRing.style.background = 'linear-gradient(135deg,#C9A84C,#e8c76a)';
+    isName.style.color = 'var(--gold)';
+  }
+  renderHome();
+}
+
+function syncAvatarUI() {
+  const joaoRing = document.querySelector('#avatar-joao > div');
+  const joaoName = document.querySelector('#avatar-joao span');
+  const isRing = document.getElementById('avatar-isabella-ring');
+  const isName = document.getElementById('avatar-isabella-name');
+  if (!joaoRing) return;
+  if (pessoaAtiva === 'Joao') {
+    joaoRing.style.background = 'linear-gradient(135deg,#C9A84C,#e8c76a)';
+    joaoName.style.color = 'var(--gold)';
+    isRing.style.background = 'var(--border)';
+    isName.style.color = 'var(--text3)';
+  } else {
+    joaoRing.style.background = 'var(--border)';
+    joaoName.style.color = 'var(--text3)';
+    isRing.style.background = 'linear-gradient(135deg,#C9A84C,#e8c76a)';
+    isName.style.color = 'var(--gold)';
+  }
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia ☀️';
+  if (h < 18) return 'Boa tarde 👋';
+  return 'Boa noite 🌙';
+}
+
+function renderHome() {
+  const r = cache.resumo;
+  const p = cache.parcelas;
+  const f = cache.faturas;
+
+  syncAvatarUI();
+  document.getElementById('home-greeting').textContent = getGreeting();
+  document.getElementById('home-name').textContent = pessoaAtiva === 'Joao' ? 'Joao' : 'Isabella';
+
+  // Saldo filtrado por pessoa
+  if (r) {
+    let txs = cache.transacoes || [];
+    txs = txs.filter(t => t.responsavel === pessoaAtiva);
+    const gastos = txs.reduce((a, t) => a + t.valor, 0);
+    const receitasPessoa = (r.porPessoa?.[pessoaAtiva] ? 0 : 0); // placeholder — receitas vêm do fluxo
+    const saldo = (r.receitasMes || 0) - r.total; // saldo geral por ora
+    setHeroValue('home-saldo', saldo);
+    const pctVar = r.totalMesAnterior ? Math.round((r.total - r.totalMesAnterior) / r.totalMesAnterior * 100) : 0;
+    const subEl = document.getElementById('home-sub');
+    if (r.totalMesAnterior) {
+      subEl.innerHTML = `<i class="ti ti-trending-${pctVar > 0 ? 'up' : 'down'}" style="font-size:11px"></i> ${pctVar > 0 ? '+' : ''}${pctVar}% vs mês anterior`;
+      subEl.style.color = pctVar > 0 ? 'var(--red)' : 'var(--green)';
+    }
+  }
+
+  // Subtítulos dos cards
+  if (f) {
+    // Cartões da pessoa: Latampass aparece para todos, cartão específico só para o dono
+    const cartoesPessoa = f.cartoes.filter(c => {
+      const nome = c.nome.toLowerCase();
+      if (nome.includes('latampass')) return true;
+      if (pessoaAtiva === 'Joao' && nome.includes('jp')) return true;
+      if (pessoaAtiva === 'Isabella' && nome.includes('isabella')) return true;
+      return false;
+    });
+    document.getElementById('home-fat-sub').textContent = cartoesPessoa.length + ' cartões';
+  }
+
+  if (p) {
+    const parcPessoa = (p.lista || []).filter(x => x.responsavel === pessoaAtiva || x.responsavel === '');
+    document.getElementById('home-par-sub').textContent = parcPessoa.length + ' em aberto';
+  }
+
+  if (cache.todasTransacoes) {
+    const txsPessoa = cache.todasTransacoes.filter(t => t.responsavel === pessoaAtiva);
+    document.getElementById('home-tx-sub').textContent = txsPessoa.length + ' lançamentos';
+  }
 }
 
 // ── SHEETS ────────────────────────────────────
@@ -924,6 +1083,7 @@ async function initDashboard() {
     renderParcelasStatic();
     checkFechamentoBanner();
     buildTxPills();
+    renderHome();
   } catch(e) {
     console.error('Erro init:', e);
     document.getElementById('ov-sub').textContent = 'erro ao carregar';
