@@ -94,11 +94,11 @@ body {
 /* ── BOTTOM NAV ─────────────────────────────── */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(13,13,15,0.95);
+  background: rgba(13,13,15,0.97);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 0.5px solid var(--border);
-  height: 60px; z-index: 100;
+  z-index: 100;
   padding-bottom: env(safe-area-inset-bottom);
 }
 .bnav-inner { display: flex; height: 60px; }
@@ -114,10 +114,14 @@ body {
 
 /* ── MAIN SCROLL AREA ───────────────────────── */
 .main {
-  padding: 0 0 80px 0;
-  min-height: 100vh;
+  position: relative;
 }
-.page { display: none; }
+.page {
+  display: none;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
 .page.active { display: block; }
 
 /* ── PAGE HEADER ────────────────────────────── */
@@ -801,7 +805,8 @@ function showSkeletons() {
 let ptrStartY = 0;
 let ptrActive = false;
 document.addEventListener('touchstart', e => {
-  if (window.scrollY === 0) ptrStartY = e.touches[0].clientY;
+  const activePage = document.querySelector('.page.active');
+  if (activePage && activePage.scrollTop === 0) ptrStartY = e.touches[0].clientY;
 }, { passive: true });
 document.addEventListener('touchmove', e => {
   if (ptrStartY === 0) return;
@@ -895,7 +900,7 @@ function showPage(id) {
   const bIdx = {home:0,overview:1,faturas:2,transacoes:3,relatorios:4};
   const bi = bIdx[id];
   if (bi !== undefined) document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');
-  window.scrollTo(0, 0);
+  document.getElementById('page-' + id).scrollTop = 0;
   if (id === 'transacoes') renderTransacoes();
   if (id === 'relatorios' && !cache.relatorio) loadRelatorio();
   if (id === 'fluxo' && !cache.fluxo) loadFluxo();
