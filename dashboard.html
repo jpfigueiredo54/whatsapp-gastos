@@ -769,7 +769,7 @@ function renderHome() {
   const r = cache.resumo;
   const p = cache.parcelas;
   const f = cache.faturas;
-  if (r) {
+  if (r && !isNaN(r.total)) {
     const saldo = (r.receitasMes||0) - r.total;
     setHeroValue('home-saldo', saldo);
     const pctVar = r.totalMesAnterior ? Math.round((r.total-r.totalMesAnterior)/r.totalMesAnterior*100) : 0;
@@ -778,6 +778,8 @@ function renderHome() {
       subEl.innerHTML = `<i class="ti ti-trending-${pctVar>0?'up':'down'}" style="font-size:12px"></i> ${pctVar>0?'+':''}${pctVar}% vs mês anterior`;
       subEl.style.color = pctVar>0 ? 'var(--red)' : 'var(--green)';
     }
+  } else {
+    document.getElementById('home-saldo').innerHTML = '<em>R$</em> —';
   }
   if (f) document.getElementById('home-fat-sub').textContent = f.cartoes.length+' cartões';
   if (p) document.getElementById('home-par-sub').textContent = p.quantidade+' em aberto';
