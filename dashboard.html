@@ -168,6 +168,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div style="font-size:11px;color:#4ade80;margin-top:6px" id="home-acumulado-sub"></div>
     </div>
   </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Saldo individual · mês</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="home-individual">
+      <div class="card" style="padding:14px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">João Pedro</div><div style="font-size:20px;font-weight:200;letter-spacing:-1px" id="home-ind-joao">—</div><div style="font-size:10px;color:var(--t3);margin-top:4px" id="home-ind-joao-det"></div></div>
+      <div class="card" style="padding:14px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Isabella</div><div style="font-size:20px;font-weight:200;letter-spacing:-1px" id="home-ind-isabella">—</div><div style="font-size:10px;color:var(--t3);margin-top:4px" id="home-ind-isabella-det"></div></div>
+    </div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 20px">
     <div class="tab-card" onclick="showPage('overview')"><div class="tab-ic" style="background:var(--amber-bg)"><i class="ti ti-layout-dashboard" style="color:var(--amber-t)" aria-hidden="true"></i></div><div><div style="font-size:12px;font-weight:500">Resumo</div><div style="font-size:9px;color:var(--t3);margin-top:2px">Visão do mês</div></div></div>
     <div class="tab-card" onclick="showPage('fluxo')"><div class="tab-ic" style="background:var(--green-bg)"><i class="ti ti-arrows-exchange" style="color:var(--green-t)" aria-hidden="true"></i></div><div><div style="font-size:12px;font-weight:500">Fluxo</div><div style="font-size:9px;color:var(--t3);margin-top:2px">Entradas e saídas</div></div></div>
@@ -384,8 +391,8 @@ function parseVal(s){return parseFloat((s||'0').replace(/R\$\s*/g,'').replace(',
 function catIcon(c){const m={alimentação:'ti-salad',restaurante:'ti-tools-kitchen-2',transporte:'ti-car',saúde:'ti-heart',lazer:'ti-confetti',compras:'ti-shopping-bag',viagem:'ti-plane',moradia:'ti-home',educação:'ti-school',pets:'ti-paw',academia:'ti-barbell',estética:'ti-sparkles',assinaturas:'ti-refresh',seguros:'ti-shield',farmácia:'ti-pill',mercado:'ti-building-store',aluguel:'ti-home',luz:'ti-bolt',internet:'ti-wifi',diarista:'ti-spray',gasolina:'ti-gas-station',outro:'ti-dots'};return m[(c||'').toLowerCase()]||'ti-receipt'}
 function catColor(c){const m={alimentação:['#dcfce7','#166534'],restaurante:['#fef9c3','#854d0e'],transporte:['#dbeafe','#1e40af'],saúde:['#fee2e2','#991b1b'],lazer:['#fce7f3','#9d174d'],compras:['#d1fae5','#065f46'],viagem:['#ede9fe','#5b21b6'],moradia:['#f3f3f0','#555'],educação:['#dbeafe','#1e40af'],pets:['#fef9c3','#854d0e'],academia:['#dcfce7','#166534'],aluguel:['#f3f3f0','#555'],diarista:['#dbeafe','#1e40af'],gasolina:['#fef9c3','#854d0e'],outro:['#f3f3f0','#555']};return m[(c||'').toLowerCase()]||['#f3f3f0','#555']}
 function pColors(){return['#2563eb','#db2777','#16a34a','#C9A84C']}
-function setHero(id,v){const el=document.getElementById(id);if(!el)return;if(isNaN(v)||v==null){el.innerHTML='<span class="rs">R$ </span>—';return}const neg=v<0;const[i,d]=fmtHero(v);el.innerHTML=`<span class="rs">${neg?'- ':''}R$ </span>${i},${d}`;el.style.color=neg?'var(--red)':'var(--t1)'}
-function setAcum(id,subId,f){const v=f.saldoAcumulado||0;const el=document.getElementById(id);if(el){el.innerHTML=`<span class="rs">R$ </span>${Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;el.style.color=v>=0?'var(--green-t)':'var(--red-t)'}const s=document.getElementById(subId);if(s)s.textContent=`desde R$ ${(f.saldoInicial||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} inicial`}
+function setHero(id,v){const el=document.getElementById(id);if(!el)return;if(isNaN(v)||v==null){el.innerHTML='<span class="rs">R$ </span>—';return}const neg=v<0;const[i,d]=fmtHero(v);el.innerHTML=`<span class="rs">R$ </span>${neg?'- ':''}${i},${d}`;el.style.color=neg?'var(--red)':'var(--t1)'}
+function setAcum(id,subId,f){const v=f.saldoAcumulado||0;const el=document.getElementById(id);if(el){el.innerHTML=`<span class="rs">R$ </span>${v<0?'- ':''}${Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;el.style.color=v>=0?'var(--green-t)':'var(--red-t)'}const s=document.getElementById(subId);if(s)s.textContent=`desde R$ ${(f.saldoInicial||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} inicial`}
 function cardArtSVG(b,n){b=(b||'').toLowerCase();if(b.includes('itaú')||b.includes('itau'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#111"/><circle cx="9" cy="7" r="4" fill="#eb001b" opacity=".9"/><circle cx="14" cy="7" r="4" fill="#f79e1b" opacity=".9"/><text x="3" y="22" font-size="3" fill="#ccc" font-weight="700">LATAM</text><text x="3" y="26" font-size="3.5" fill="#fff" font-weight="700">PASS</text><text x="40" y="25" text-anchor="end" font-size="4" fill="#fff" font-weight="700">itaú</text></svg>`;if(b.includes('nubank'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#0a0010"/><text x="36" y="7" text-anchor="end" font-size="5" fill="#c084fc" font-weight="700">Nu</text><rect x="0" y="26" width="44" height="2" fill="#7c3aed" opacity=".5"/></svg>`;return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#f0f0ea" stroke="#e0e0d8" stroke-width=".5"/><text x="22" y="18" text-anchor="middle" font-size="5" fill="#999">${(n||'').slice(0,6)}</text></svg>`}
 
 function login(){if(document.getElementById('senha-input').value===SENHA){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';initDashboard()}else{document.getElementById('login-error').style.display='block'}}
@@ -400,7 +407,25 @@ function updateHomeAcum(f){setAcum('home-acumulado','home-acumulado-sub',f)}
 
 function renderHome(){document.getElementById('home-greeting').textContent=getGreeting();const r=cache.resumo;if(r&&!isNaN(r.total)){const s=(r.receitasMes||0)-r.total;setHero('home-saldo',s);const p=r.totalMesAnterior?Math.round((r.total-r.totalMesAnterior)/r.totalMesAnterior*100):0;const el=document.getElementById('home-sub');if(r.totalMesAnterior){el.innerHTML=`<i class="ti ti-trending-${p>0?'up':'down'}" style="font-size:11px"></i> ${p>0?'+':''}${p}% vs anterior`;el.style.color=p>0?'var(--red)':'var(--green)'}}else{document.getElementById('home-saldo').innerHTML='<span class="rs">R$ </span>—'}
 if(cache.faturas)document.getElementById('home-fat-sub').textContent=cache.faturas.cartoes.length+' cartões';if(cache.parcelas)document.getElementById('home-par-sub').textContent=cache.parcelas.quantidade+' abertas';if(cache.todasTransacoes)document.getElementById('home-tx-sub').textContent=cache.todasTransacoes.length+' lanç.';
-if(cache.fluxo)updateHomeAcum(cache.fluxo);else fetch('/api/fluxo?meses=6').then(r=>r.json()).then(d=>{cache.fluxo=d;updateHomeAcum(d)}).catch(()=>{})}
+if(cache.fluxo)updateHomeAcum(cache.fluxo);else fetch('/api/fluxo?meses=6').then(r=>r.json()).then(d=>{cache.fluxo=d;updateHomeAcum(d)}).catch(()=>{});
+fetch('/api/saldo-individual').then(r=>r.json()).then(d=>{renderSaldoIndividual(d)}).catch(()=>{})}
+
+function renderSaldoIndividual(d){
+  Object.entries(d).forEach(([pessoa,dados])=>{
+    const pLow=pessoa.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const key=pLow.includes('joao')?'joao':'isabella';
+    const valEl=document.getElementById('home-ind-'+key);
+    const detEl=document.getElementById('home-ind-'+key+'-det');
+    if(valEl){
+      const s=dados.saldo;
+      valEl.textContent='R$ '+(s<0?'- ':'')+Math.abs(s).toLocaleString('pt-BR',{minimumFractionDigits:2});
+      valEl.style.color=s>=0?'var(--green)':'var(--red)';
+    }
+    if(detEl){
+      detEl.innerHTML=`<span style="color:var(--green)">↑ ${fmt(dados.receitas)}</span> · <span style="color:var(--red)">↓ ${fmt(dados.gastos)}</span>`;
+    }
+  });
+}
 
 async function initDashboard(){populateMes('ov-mes');populateMes('tx-mes');try{const[r,p,f,t]=await Promise.all([fetch('/api/resumo').then(r=>r.json()),fetch('/api/parcelas').then(r=>r.json()),fetch('/api/faturas').then(r=>r.json()),fetch('/api/transacoes').then(r=>r.json())]);cache.resumo=r;cache.parcelas=p;cache.faturas=f;cache.transacoes=t.transacoes||[];cache.todasTransacoes=t.transacoes||[];
 const ct=[...new Set(f.cartoes.map(c=>c.nome))];const ps=[...new Set((t.transacoes||[]).map(x=>x.responsavel).filter(Boolean))];const cs=[...new Set((t.transacoes||[]).map(x=>x.categoria).filter(Boolean))].sort();const cp=[...new Set((p.lista||[]).map(x=>x.cartao).filter(Boolean))];const pp=[...new Set((p.lista||[]).map(x=>x.responsavel).filter(Boolean))];
