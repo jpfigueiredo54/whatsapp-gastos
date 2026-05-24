@@ -843,9 +843,62 @@ async function deletarUltimoLancamento(pessoa) {
   return true;
 }
 
+async function getApiSaldoIndividual() {
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  // Buscar gastos do mês
+  const resGastos = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Gastos!A:H" });
+  const gastosMes = (resGastos.data.values || []).slice(1).filter(row => {
+    if (!row[0]) return false;
+    const partes = row[0].split("/");
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) - 1 === mesAtual && parseInt(partes[2]) === anoAtual;
+  });
+
+  // Buscar receitas do mês
+  const { porPessoa: receitasPorPessoa } = await getReceitasPorMes(mesAtual, anoAtual);
+
+  // Calcular gastos por pessoa (Latampass divide por 2)
+  const gastosPorPessoa = {};
+  gastosMes.forEach(row => {
+    const val = parseVal(row[1]);
+    const responsavel = row[6] || "Desconhecido";
+    const cartao = (row[5] || "").toLowerCase();
+
+    if (cartao.includes("latampass")) {
+      const metade = val / 2;
+      gastosPorPessoa["João Pedro"] = (gastosPorPessoa["João Pedro"] || 0) + metade;
+      gastosPorPessoa["Isabella"] = (gastosPorPessoa["Isabella"] || 0) + metade;
+    } else {
+      gastosPorPessoa[responsavel] = (gastosPorPessoa[responsavel] || 0) + val;
+    }
+  });
+
+  // Montar resultado por pessoa
+  const pessoas = [...new Set([...Object.keys(gastosPorPessoa), ...Object.keys(receitasPorPessoa)])];
+  const resultado = {};
+  pessoas.forEach(p => {
+    const receitas = receitasPorPessoa[p] || 0;
+    const gastos = gastosPorPessoa[p] || 0;
+    resultado[p] = {
+      receitas,
+      gastos,
+      saldo: receitas - gastos,
+    };
+  });
+
+  return resultado;
+}
+
 module.exports = {
   getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo,
   getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes,
   getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getUltimoLancamento, deletarUltimoLancamento,
-  getApiReceitas, getApiFluxoCaixa,
+  getApiReceitas, getApiFluxoCaixa, getApiSaldoIndividual,
 };
