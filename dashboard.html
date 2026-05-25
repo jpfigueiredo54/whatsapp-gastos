@@ -218,12 +218,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="card" id="ov-categorias"><div class="loading">Carregando...</div></div>
   </div>
   <div class="sec">
-    <div class="sec-hd"><span class="sec-ttl">Últimos lançamentos</span><span class="sec-lnk" onclick="showPage('transacoes')">ver todos</span></div>
-    <div class="card" id="ov-transacoes"><div class="loading">Carregando...</div></div>
-  </div>
-  <div class="cards-2">
-    <div><div class="sec-hd"><span class="sec-ttl">Faturas</span></div><div class="card" id="ov-faturas-mini"></div></div>
-    <div><div class="sec-hd"><span class="sec-ttl">Por pessoa</span></div><div class="card" id="ov-pessoas"></div></div>
+    <div class="sec-hd"><span class="sec-ttl">Faturas</span></div>
+    <div class="card" id="ov-faturas-mini"></div>
   </div>
 </div>
 
@@ -238,36 +234,19 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="metric" style="background:var(--green-bg);color:var(--green-t)"><div class="ml">Entradas</div><div class="mv" id="fluxo-receitas">—</div></div>
     <div class="metric" style="background:var(--red-bg);color:var(--red-t)"><div class="ml">Saídas</div><div class="mv" id="fluxo-gastos">—</div></div>
   </div>
-  <div class="sec" style="padding-top:16px">
-    <div class="acum-card">
-      <div style="font-size:9px;color:var(--green-t);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:6px">Saldo acumulado</div>
-      <div class="acum-val" id="fluxo-acumulado-big"><span class="rs">R$ </span>—</div>
-      <div style="font-size:11px;color:#4ade80;margin-top:6px" id="fluxo-acumulado-sub"></div>
-    </div>
-  </div>
-  <div class="period-row">
+  <div class="period-row" style="padding-top:16px">
     <button class="pbtn" onclick="setMesesFluxo(1,this)">1m</button>
     <button class="pbtn" onclick="setMesesFluxo(3,this)">3m</button>
     <button class="pbtn on" onclick="setMesesFluxo(6,this)">6m</button>
     <button class="pbtn" onclick="setMesesFluxo(12,this)">12m</button>
   </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-ttl">Receitas vs gastos</span></div>
-    <div class="card" style="padding:14px">
-      <div style="position:relative;height:130px"><canvas id="fluxo-chart"></canvas></div>
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div>Receitas</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Gastos</div>
-      </div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd"><span class="sec-ttl">Próximas entradas</span></div>
-    <div class="card" id="fluxo-proximas"><div class="loading">Carregando...</div></div>
-  </div>
   <div class="cards-2">
     <div><div class="sec-hd"><span class="sec-ttl">Histórico</span></div><div class="card" id="fluxo-historico"></div></div>
-    <div><div class="sec-hd"><span class="sec-ttl">Por pessoa</span></div><div class="card" id="fluxo-pessoas"></div></div>
+    <div><div class="sec-hd"><span class="sec-ttl">Próximas entradas</span></div><div class="card" id="fluxo-proximas"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Receitas por pessoa</span></div>
+    <div class="card" id="fluxo-pessoas"></div>
   </div>
   <div class="sec">
     <div class="sec-hd"><span class="sec-ttl">Últimas receitas</span></div>
@@ -356,9 +335,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <div class="bottom-nav"><div class="bnav-inner">
   <div class="bnav-item active" onclick="showPage('home')"><i class="ti ti-home"></i><span>Home</span></div>
   <div class="bnav-item" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i><span>Resumo</span></div>
+  <div class="bnav-item" onclick="showPage('fluxo')"><i class="ti ti-arrows-exchange"></i><span>Fluxo</span></div>
   <div class="bnav-item" onclick="showPage('faturas')"><i class="ti ti-credit-card"></i><span>Faturas</span></div>
   <div class="bnav-item" onclick="showPage('transacoes')"><i class="ti ti-list"></i><span>Gastos</span></div>
-  <div class="bnav-item" onclick="showPage('relatorios')"><i class="ti ti-chart-bar"></i><span>Mais</span></div>
 </div></div>
 
 <!-- SHEETS -->
@@ -396,7 +375,7 @@ function setAcum(id,subId,f){const v=f.saldoAcumulado||0;const el=document.getEl
 function cardArtSVG(b,n){b=(b||'').toLowerCase();if(b.includes('itaú')||b.includes('itau'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#111"/><circle cx="9" cy="7" r="4" fill="#eb001b" opacity=".9"/><circle cx="14" cy="7" r="4" fill="#f79e1b" opacity=".9"/><text x="3" y="22" font-size="3" fill="#ccc" font-weight="700">LATAM</text><text x="3" y="26" font-size="3.5" fill="#fff" font-weight="700">PASS</text><text x="40" y="25" text-anchor="end" font-size="4" fill="#fff" font-weight="700">itaú</text></svg>`;if(b.includes('nubank'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#0a0010"/><text x="36" y="7" text-anchor="end" font-size="5" fill="#c084fc" font-weight="700">Nu</text><rect x="0" y="26" width="44" height="2" fill="#7c3aed" opacity=".5"/></svg>`;return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#f0f0ea" stroke="#e0e0d8" stroke-width=".5"/><text x="22" y="18" text-anchor="middle" font-size="5" fill="#999">${(n||'').slice(0,6)}</text></svg>`}
 
 function login(){if(document.getElementById('senha-input').value===SENHA){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';initDashboard()}else{document.getElementById('login-error').style.display='block'}}
-function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');const bIdx={home:0,overview:1,faturas:2,transacoes:3,relatorios:4};const bi=bIdx[id];if(bi!==undefined)document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');document.getElementById('page-'+id).scrollTop=0;if(id==='transacoes')renderTransacoes();if(id==='relatorios'&&!cache.relatorio)loadRelatorio();if(id==='fluxo'&&!cache.fluxo)loadFluxo();if(id==='parcelas')renderParcelas();if(id==='home')renderHome()}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');const bIdx={home:0,overview:1,fluxo:2,faturas:3,transacoes:4,parcelas:4,relatorios:4};const bi=bIdx[id];if(bi!==undefined)document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');document.getElementById('page-'+id).scrollTop=0;if(id==='transacoes')renderTransacoes();if(id==='relatorios'&&!cache.relatorio)loadRelatorio();if(id==='fluxo'&&!cache.fluxo)loadFluxo();if(id==='parcelas')renderParcelas();if(id==='home')renderHome()}
 function openSheet(id){document.getElementById('sheet-overlay').classList.add('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));document.getElementById(id).classList.add('open')}
 function closeSheet(){document.getElementById('sheet-overlay').classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'))}
 function populateMes(id){const a=new Date();const o=[];for(let i=11;i>=0;i--){const d=new Date(a.getFullYear(),a.getMonth()-i,1);o.push(`<option value="${d.getMonth()}|${d.getFullYear()}"${i===0?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`)}const el=document.getElementById(id);if(el)el.innerHTML=o.join('')}
@@ -479,10 +458,9 @@ if(!tx.length){document.getElementById('tx-content').innerHTML='<div class="empt
 document.getElementById('tx-content').innerHTML=tx.map(t=>{const[bg,fg]=catColor(t.categoria);return`<div class="tx-row"><div class="tx-ic" style="background:${bg};color:${fg}"><i class="ti ${catIcon(t.categoria)}" aria-hidden="true"></i></div><div style="flex:1"><div class="tx-n">${t.descricao}</div><div class="tx-m">${t.data} · ${t.cartao} · <span class="badge ${t.tipo==='Parcelado'?'b':'gr'}" style="font-size:9px">${t.tipo}</span></div></div><div style="text-align:right"><div class="tx-a r">${fmt(t.valor)}</div><div style="font-size:10px;color:var(--t3)">${t.responsavel}</div></div></div>`}).join('')}
 
 async function loadFluxo(){try{const[f,r]=await Promise.all([fetch(`/api/fluxo?meses=${mesesFluxo}`).then(r=>r.json()),fetch('/api/receitas').then(r=>r.json())]);cache.fluxo=f;cache.receitas=r;renderFluxo()}catch(e){console.error(e)}}
-function renderFluxo(){const f=cache.fluxo,r=cache.receitas;if(!f)return;setHero('fluxo-saldo-val',f.saldoMes);document.getElementById('fluxo-receitas').textContent=fmt(f.receitasMes);document.getElementById('fluxo-gastos').textContent=fmt(f.gastosMes);setAcum('fluxo-acumulado-big','fluxo-acumulado-sub',f);
+function renderFluxo(){const f=cache.fluxo,r=cache.receitas;if(!f)return;setHero('fluxo-saldo-val',f.saldoMes);document.getElementById('fluxo-receitas').textContent=fmt(f.receitasMes);document.getElementById('fluxo-gastos').textContent=fmt(f.gastosMes);
 const se=document.getElementById('fluxo-saldo-sub');se.innerHTML=f.saldoMes>=0?'<i class="ti ti-trending-up" style="font-size:11px"></i> no azul este mês':'<i class="ti ti-trending-down" style="font-size:11px"></i> no vermelho este mês';se.style.color=f.saldoMes>=0?'var(--green)':'var(--red)';
-if(charts.fluxo)charts.fluxo.destroy();const cx=document.getElementById('fluxo-chart');if(cx)charts.fluxo=new Chart(cx,{type:'bar',data:{labels:(f.historico||[]).map(h=>h.mes),datasets:[{label:'Receitas',data:(f.historico||[]).map(h=>h.receitas),backgroundColor:(f.historico||[]).map((_,i,a)=>i===a.length-1?'rgba(74,222,128,.9)':'rgba(74,222,128,.3)'),borderRadius:4,borderSkipped:false},{label:'Gastos',data:(f.historico||[]).map(h=>h.gastos),backgroundColor:(f.historico||[]).map((_,i,a)=>i===a.length-1?'rgba(248,113,113,.9)':'rgba(248,113,113,.3)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#9ca3af'}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},color:'#9ca3af',callback:v=>fmtK(v)}}}}});
-const pp={Joao:'#2563eb',Isabella:'#db2777'};
+const pp={'João Pedro':'#2563eb',Isabella:'#db2777'};
 document.getElementById('fluxo-proximas').innerHTML=(f.proximasEntradas||[]).length?(f.proximasEntradas||[]).map(e=>{const c=pp[e.pessoa]||'#888';return`<div class="entrada-item"><div class="entrada-av" style="background:${c}15;color:${c}">${e.pessoa.slice(0,2).toUpperCase()}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.pessoa} · ${e.descricao||'Salário'}</div><div style="font-size:11px;color:var(--t3)">dia ${e.dia} · em ${e.diasRestantes}d</div></div><div style="text-align:right">${e.valorEstimado>0?`<div style="font-size:13px;font-weight:500;color:var(--green)">${fmt(e.valorEstimado)}</div><div style="font-size:10px;color:var(--t3)">estimado</div>`:'<span style="color:var(--t3)">—</span>'}</div></div>`}).join(''):'<div class="empty">Sem entradas previstas</div>';
 document.getElementById('fluxo-historico').innerHTML=(f.historico||[]).slice().reverse().map((h,i)=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span style="font-size:12px;font-weight:${i===0?'500':'400'};color:${i===0?'var(--t1)':'var(--t2)'}">${h.mes}</span><div style="text-align:right"><span style="font-size:12px;font-weight:500;color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo>=0?'+':''}${fmt(h.saldo)}</span>${h.acumulado!=null?`<div style="font-size:10px;color:var(--t3)">acum. ${fmt(h.acumulado)}</div>`:''}</div></div><div style="font-size:10px;color:var(--t3)"><span style="color:var(--green)">↑ ${fmt(h.receitas)}</span> · <span style="color:var(--red)">↓ ${fmt(h.gastos)}</span></div></div>`).join('');
 const pp2=f.porPessoaMes||{};const tp=Object.values(pp2).reduce((a,b)=>a+b,0);
