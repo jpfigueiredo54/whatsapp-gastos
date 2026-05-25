@@ -864,14 +864,13 @@ async function getApiSaldoIndividual() {
   // Buscar receitas do mês
   const { porPessoa: receitasPorPessoa } = await getReceitasPorMes(mesAtual, anoAtual);
 
-  // Calcular gastos por pessoa (Latampass divide por 2)
+  // Calcular gastos por pessoa (Ambos = divide 50/50)
   const gastosPorPessoa = {};
   gastosMes.forEach(row => {
     const val = parseVal(row[1]);
     const responsavel = row[6] || "Desconhecido";
-    const cartao = (row[5] || "").toLowerCase();
 
-    if (cartao.includes("latampass")) {
+    if (responsavel.toLowerCase() === "ambos") {
       const metade = val / 2;
       gastosPorPessoa["João Pedro"] = (gastosPorPessoa["João Pedro"] || 0) + metade;
       gastosPorPessoa["Isabella"] = (gastosPorPessoa["Isabella"] || 0) + metade;
