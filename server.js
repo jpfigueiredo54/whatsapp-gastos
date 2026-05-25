@@ -244,12 +244,13 @@ app.post("/webhook", async (req, res) => {
       if (body.toLowerCase() === "sim") {
         delete pendentes[from];
         const alerta = await verificarAlertaBudget(expense.categoria, parseFloat((expense.valor_parcela || expense.valor).replace(",", ".")));
-        await appendToSheet(expense, pessoa);
-        if (expense.parcelado) await appendParcela(expense, pessoa);
+        const pessoaFinal = (expense.cartao || "").toLowerCase().includes("latampass") ? "Ambos" : pessoa;
+        await appendToSheet(expense, pessoaFinal);
+        if (expense.parcelado) await appendParcela(expense, pessoaFinal);
         const tipo = expense.parcelado ? "Parcelado" : "À vista";
         let reply = expense.parcelado
-          ? `✅ Parcelamento registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n📌 Parcelado\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
-          : `✅ Gasto registrado!\n👤 ${pessoa}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 À vista`;
+          ? `✅ Parcelamento registrado!\n👤 ${pessoaFinal}\n📅 ${expense.data}\n💳 ${expense.total_parcelas}x de R$ ${expense.valor_parcela}\n💰 Total: R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n📌 Parcelado\n\n📌 Parcela 1/${expense.total_parcelas} lançada. As próximas serão registradas automaticamente todo dia 1º.`
+          : `✅ Gasto registrado!\n👤 ${pessoaFinal}\n📅 ${expense.data}\n💰 R$ ${expense.valor}\n🏷️ ${expense.categoria}\n📝 ${expense.descricao}\n💳 ${expense.metodo_pagamento}${expense.cartao ? ` (${expense.cartao})` : ""}\n📌 À vista`;
         if (alerta) reply += `\n\n${alerta}`;
         return twimlReply(reply + `\n\n${fraseAleatoria()}`);
       } else if (body.toLowerCase() === "não" || body.toLowerCase() === "nao") {
