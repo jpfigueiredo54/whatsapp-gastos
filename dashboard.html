@@ -394,7 +394,7 @@ function addOptions(id,items,def){const s=document.getElementById(id);if(!s)retu
 function getGreeting(){const h=new Date().getHours();return h<12?'Bom dia':'Boa tarde'}
 function updateHomeAcum(f){setAcum('home-acumulado','home-acumulado-sub',f)}
 
-function renderHome(){document.getElementById('home-greeting').textContent=getGreeting();const r=cache.resumo;if(r&&!isNaN(r.total)){const s=(r.receitasMes||0)-r.total;setHero('home-saldo',s);const p=r.totalMesAnterior?Math.round((r.total-r.totalMesAnterior)/r.totalMesAnterior*100):0;const el=document.getElementById('home-sub');if(r.totalMesAnterior){el.innerHTML=`<i class="ti ti-trending-${p>0?'up':'down'}" style="font-size:11px"></i> ${p>0?'+':''}${p}% vs anterior`;el.style.color=p>0?'var(--red)':'var(--green)'}}else{document.getElementById('home-saldo').innerHTML='<span class="rs">R$ </span>—'}
+function renderHome(){document.getElementById('home-greeting').textContent=getGreeting();const r=cache.resumo;if(r&&!isNaN(r.total)){const s=(r.receitasMes||0)-r.total;setHero('home-saldo',s);const p=r.totalMesAnterior?Math.round((r.total-r.totalMesAnterior)/r.totalMesAnterior*100):0;const el=document.getElementById('home-sub');if(r.totalMesAnterior){el.innerHTML=`<i class="ti ti-trending-${p>0?'up':'down'}" style="font-size:11px"></i> ${p>0?'+':''}${p}% vs anterior`;el.style.color=p>0?'var(--red)':'var(--green)'}}else{const hs=document.getElementById('home-saldo');if(hs)hs.innerHTML='<span class="rs" style="font-size:13px;color:var(--t3)">carregando...</span>';const hsb=document.getElementById('home-sub');if(hsb){hsb.innerHTML='aguardando servidor';hsb.style.color='var(--t3)'}}
 if(cache.faturas)document.getElementById('home-fat-sub').textContent=cache.faturas.cartoes.length+' cartões';if(cache.parcelas)document.getElementById('home-par-sub').textContent=cache.parcelas.quantidade+' abertas';if(cache.todasTransacoes)document.getElementById('home-tx-sub').textContent=cache.todasTransacoes.length+' lanç.';
 if(cache.fluxo)updateHomeAcum(cache.fluxo);else fetch('/api/fluxo?meses=6').then(r=>r.json()).then(d=>{cache.fluxo=d;updateHomeAcum(d)}).catch(()=>{});
 fetch('/api/saldo-individual').then(r=>r.json()).then(d=>{renderSaldoIndividual(d)}).catch(()=>{})}
@@ -416,10 +416,29 @@ function renderSaldoIndividual(d){
   });
 }
 
-async function initDashboard(){populateMes('ov-mes');populateMes('tx-mes');try{const[r,p,f,t]=await Promise.all([fetch('/api/resumo').then(r=>r.json()),fetch('/api/parcelas').then(r=>r.json()),fetch('/api/faturas').then(r=>r.json()),fetch('/api/transacoes').then(r=>r.json())]);cache.resumo=r;cache.parcelas=p;cache.faturas=f;cache.transacoes=t.transacoes||[];cache.todasTransacoes=t.transacoes||[];
-const ct=[...new Set(f.cartoes.map(c=>c.nome))];const ps=[...new Set((t.transacoes||[]).map(x=>x.responsavel).filter(Boolean))];const cs=[...new Set((t.transacoes||[]).map(x=>x.categoria).filter(Boolean))].sort();const cp=[...new Set((p.lista||[]).map(x=>x.cartao).filter(Boolean))];const pp=[...new Set((p.lista||[]).map(x=>x.responsavel).filter(Boolean))];
-addOptions('ov-cartao',ct,'Todos');addOptions('ov-pessoa',ps,'Todas');addOptions('tx-cartao',ct,'Todos');addOptions('tx-pessoa',ps,'Todas');addOptions('tx-categoria',cs,'Todas');addOptions('par-cartao',cp,'Todos');addOptions('par-pessoa',pp,'Todas');
-renderOverview();renderFaturas();renderParcelasStatic();buildTxPills();renderHome()}catch(e){console.error(e)}}
+async function initDashboard(){
+  populateMes('ov-mes');populateMes('tx-mes');
+  renderHome();
+  try{
+    const[r,p,f,t]=await Promise.all([
+      fetch('/api/resumo').then(r=>r.json()),
+      fetch('/api/parcelas').then(r=>r.json()),
+      fetch('/api/faturas').then(r=>r.json()),
+      fetch('/api/transacoes').then(r=>r.json())
+    ]);
+    cache.resumo=r;cache.parcelas=p;cache.faturas=f;
+    cache.transacoes=t.transacoes||[];cache.todasTransacoes=t.transacoes||[];
+    const ct=[...new Set(f.cartoes.map(c=>c.nome))];
+    const ps=[...new Set((t.transacoes||[]).map(x=>x.responsavel).filter(Boolean))];
+    const cs=[...new Set((t.transacoes||[]).map(x=>x.categoria).filter(Boolean))].sort();
+    const cp=[...new Set((p.lista||[]).map(x=>x.cartao).filter(Boolean))];
+    const pp=[...new Set((p.lista||[]).map(x=>x.responsavel).filter(Boolean))];
+    addOptions('ov-cartao',ct,'Todos');addOptions('ov-pessoa',ps,'Todas');
+    addOptions('tx-cartao',ct,'Todos');addOptions('tx-pessoa',ps,'Todas');
+    addOptions('tx-categoria',cs,'Todas');addOptions('par-cartao',cp,'Todos');addOptions('par-pessoa',pp,'Todas');
+    renderHome();renderOverview();renderFaturas();renderParcelasStatic();buildTxPills();
+  }catch(e){console.error(e)}
+}
 
 async function onMesChange(){const{mes,ano}=getMesAno('ov-mes');try{const[r,t]=await Promise.all([fetch(`/api/resumo?mes=${mes}&ano=${ano}`).then(r=>r.json()),fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json())]);cache.resumo=r;cache.transacoes=t.transacoes||[];renderOverview()}catch(e){console.error(e)}}
 async function onTxMesChange(){const{mes,ano}=getMesAno('tx-mes');try{const d=await fetch(`/api/transacoes?mes=${mes}&ano=${ano}`).then(r=>r.json());cache.todasTransacoes=d.transacoes||[];renderTransacoes()}catch(e){console.error(e)}}
