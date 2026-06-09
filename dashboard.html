@@ -264,9 +264,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       </div>
     </div>
   </div>
-  <div class="cards-2">
-    <div><div class="sec-hd"><span class="sec-ttl">Histórico</span></div><div class="card" id="fluxo-historico"></div></div>
-    <div><div class="sec-hd"><span class="sec-ttl">Próximas entradas</span></div><div class="card" id="fluxo-proximas"><div class="loading">Carregando...</div></div></div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Histórico</span></div>
+    <div class="card" id="fluxo-historico"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-ttl">Próximas entradas</span></div>
+    <div class="card" id="fluxo-proximas"><div class="loading">Carregando...</div></div>
   </div>
   <div class="sec">
     <div class="sec-hd"><span class="sec-ttl">Receitas por pessoa</span></div>
@@ -382,6 +386,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 </div>
 <script>
 const SENHA='lolosfinance';
+
+// Detecta mudança de mês e limpa cache
+const mesAtualKey = new Date().getMonth()+'|'+new Date().getFullYear();
+if(localStorage.getItem('lolos_mes') !== mesAtualKey){
+  localStorage.setItem('lolos_mes', mesAtualKey);
+  // Limpa cache de sessão ao virar o mês
+  Object.keys(sessionStorage).forEach(k => sessionStorage.removeItem(k));
+}
 let cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:[],fluxo:null,receitas:null};
 let catFiltroTipo='todos',txTipoFiltro='todos',mesesRel=6,mesesFluxo=6,charts={};
 
@@ -398,7 +410,13 @@ function setHero(id,v){const el=document.getElementById(id);if(!el)return;if(isN
 function setAcum(id,subId,f){const v=f.saldoAcumulado||0;const el=document.getElementById(id);if(el){el.innerHTML=`<span class="rs">R$ </span>${v<0?'- ':''}${Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;el.style.color=v>=0?'var(--green-t)':'var(--red-t)'}const s=document.getElementById(subId);if(s)s.textContent=`desde R$ ${(f.saldoInicial||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} inicial`}
 function cardArtSVG(b,n){b=(b||'').toLowerCase();if(b.includes('itaú')||b.includes('itau'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#111"/><circle cx="9" cy="7" r="4" fill="#eb001b" opacity=".9"/><circle cx="14" cy="7" r="4" fill="#f79e1b" opacity=".9"/><text x="3" y="22" font-size="3" fill="#ccc" font-weight="700">LATAM</text><text x="3" y="26" font-size="3.5" fill="#fff" font-weight="700">PASS</text><text x="40" y="25" text-anchor="end" font-size="4" fill="#fff" font-weight="700">itaú</text></svg>`;if(b.includes('nubank'))return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#0a0010"/><text x="36" y="7" text-anchor="end" font-size="5" fill="#c084fc" font-weight="700">Nu</text><rect x="0" y="26" width="44" height="2" fill="#7c3aed" opacity=".5"/></svg>`;return`<svg width="44" height="28" viewBox="0 0 44 28" style="border-radius:4px;flex-shrink:0"><rect width="44" height="28" rx="3" fill="#f0f0ea" stroke="#e0e0d8" stroke-width=".5"/><text x="22" y="18" text-anchor="middle" font-size="5" fill="#999">${(n||'').slice(0,6)}</text></svg>`}
 
-function login(){if(document.getElementById('senha-input').value===SENHA){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';initDashboard()}else{document.getElementById('login-error').style.display='block'}}
+function login(){if(document.getElementById('senha-input').value===SENHA){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  // Sempre limpa cache ao entrar — garante dados frescos
+  cache={resumo:null,parcelas:null,faturas:null,transacoes:[],todasTransacoes:[],fluxo:null,receitas:null};
+  initDashboard()
+}else{document.getElementById('login-error').style.display='block'}}
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.bnav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');const bIdx={home:0,overview:1,fluxo:2,faturas:3,transacoes:4,parcelas:4,relatorios:4};const bi=bIdx[id];if(bi!==undefined)document.querySelectorAll('.bnav-item')[bi]?.classList.add('active');document.getElementById('page-'+id).scrollTop=0;if(id==='transacoes')renderTransacoes();if(id==='relatorios'&&!cache.relatorio)loadRelatorio();if(id==='fluxo'&&!cache.fluxo)loadFluxo();else if(id==='fluxo')renderFluxo();if(id==='parcelas')renderParcelas();if(id==='home')renderHome();if(id==='faturas')renderFaturas();if(id==='overview')renderOverview()}
 function openSheet(id){document.getElementById('sheet-overlay').classList.add('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));document.getElementById(id).classList.add('open')}
 function closeSheet(){document.getElementById('sheet-overlay').classList.remove('open');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'))}
@@ -508,8 +526,8 @@ function renderFluxo(){const f=cache.fluxo,r=cache.receitas;if(!f)return;setHero
 const se=document.getElementById('fluxo-saldo-sub');se.innerHTML=f.saldoMes>=0?'<i class="ti ti-trending-up" style="font-size:11px"></i> no azul este mês':'<i class="ti ti-trending-down" style="font-size:11px"></i> no vermelho este mês';se.style.color=f.saldoMes>=0?'var(--green)':'var(--red)';
 if(charts.fluxo)charts.fluxo.destroy();const cx=document.getElementById('fluxo-chart');if(cx)charts.fluxo=new Chart(cx,{type:'bar',data:{labels:(f.historico||[]).map(h=>h.mes),datasets:[{label:'Receitas',data:(f.historico||[]).map(h=>h.receitas),backgroundColor:(f.historico||[]).map((_,i,a)=>i===a.length-1?'rgba(74,222,128,.9)':'rgba(74,222,128,.3)'),borderRadius:4,borderSkipped:false},{label:'Gastos',data:(f.historico||[]).map(h=>h.gastos),backgroundColor:(f.historico||[]).map((_,i,a)=>i===a.length-1?'rgba(248,113,113,.9)':'rgba(248,113,113,.3)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#9ca3af'}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},color:'#9ca3af',callback:v=>fmtK(v)}}}}});
 const pp={'João Pedro':'#2563eb',Isabella:'#db2777'};
-document.getElementById('fluxo-proximas').innerHTML=(f.proximasEntradas||[]).length?(f.proximasEntradas||[]).map(e=>{const c=pp[e.pessoa]||'#888';return`<div class="entrada-item"><div class="entrada-av" style="background:${c}15;color:${c}">${e.pessoa.slice(0,2).toUpperCase()}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.pessoa} · ${e.descricao||'Salário'}</div><div style="font-size:11px;color:var(--t3)">dia ${e.dia} · em ${e.diasRestantes}d</div></div><div style="text-align:right">${e.valorEstimado>0?`<div style="font-size:13px;font-weight:500;color:var(--green)">${fmt(e.valorEstimado)}</div><div style="font-size:10px;color:var(--t3)">estimado</div>`:'<span style="color:var(--t3)">—</span>'}</div></div>`}).join(''):'<div class="empty">Sem entradas previstas</div>';
-document.getElementById('fluxo-historico').innerHTML=(f.historico||[]).slice().reverse().map((h,i)=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span style="font-size:12px;font-weight:${i===0?'500':'400'};color:${i===0?'var(--t1)':'var(--t2)'}">${h.mes}</span><div style="text-align:right"><span style="font-size:12px;font-weight:500;color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo>=0?'+':''}${fmt(h.saldo)}</span>${h.acumulado!=null?`<div style="font-size:10px;color:var(--t3)">acum. ${fmt(h.acumulado)}</div>`:''}</div></div><div style="font-size:10px;color:var(--t3)"><span style="color:var(--green)">↑ ${fmt(h.receitas)}</span> · <span style="color:var(--red)">↓ ${fmt(h.gastos)}</span></div></div>`).join('');
+document.getElementById('fluxo-proximas').innerHTML=(f.proximasEntradas||[]).length?(f.proximasEntradas||[]).map(e=>{const c=pp[e.pessoa]||'#888';return`<div class="entrada-item"><div class="entrada-av" style="background:${c}15;color:${c};flex-shrink:0">${e.pessoa.slice(0,2).toUpperCase()}</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.pessoa} · ${e.descricao||'Salário'}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">dia ${e.dia} · em ${e.diasRestantes}d</div></div><div style="text-align:right;flex-shrink:0;margin-left:8px">${e.valorEstimado>0?`<div style="font-size:12px;font-weight:500;color:var(--green)">${fmt(e.valorEstimado)}</div><div style="font-size:10px;color:var(--t3)">estimado</div>`:'<span style="color:var(--t3)">—</span>'}</div></div>`}).join(''):'<div class="empty">Sem entradas previstas</div>';
+document.getElementById('fluxo-historico').innerHTML=(f.historico||[]).slice().reverse().map((h,i)=>`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:.5px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><span style="font-size:12px;font-weight:${i===0?'500':'400'};color:${i===0?'var(--t1)':'var(--t2)'}; white-space:nowrap">${h.mes}</span><div style="text-align:right;flex-shrink:0;margin-left:8px"><span style="font-size:13px;font-weight:500;color:${h.saldo>=0?'var(--green)':'var(--red)'}">${h.saldo>=0?'+':''}${fmt(h.saldo)}</span>${h.acumulado!=null?`<div style="font-size:10px;color:var(--t3)">acum. ${fmt(h.acumulado)}</div>`:''}</div></div><div style="font-size:10px;color:var(--t3)"><span style="color:var(--green)">↑ ${fmt(h.receitas)}</span> · <span style="color:var(--red)">↓ ${fmt(h.gastos)}</span></div></div>`).join('');
 const pp2=f.porPessoaMes||{};const tp=Object.values(pp2).reduce((a,b)=>a+b,0);
 document.getElementById('fluxo-pessoas').innerHTML=Object.entries(pp2).length?Object.entries(pp2).sort((a,b)=>b[1]-a[1]).map(([p,v])=>{const c=pp[p]||'#888';const pc=tp?Math.round(v/tp*100):0;return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${c}"></div><span style="font-size:12px">${p}</span></div><span style="font-size:12px;font-weight:500;color:var(--green)">${fmt(v)}</span></div><div class="prog"><div class="pf" style="width:${pc}%;background:${c}"></div></div></div>`}).join(''):'<div class="empty">Sem receitas</div>';
 document.getElementById('fluxo-receitas-lista').innerHTML=(r?.lista||[]).slice(0,8).map(rc=>{const c=pp[rc.pessoa]||'#888';return`<div class="tx-row"><div class="tx-ic" style="background:${c}15;color:${c}"><i class="ti ti-circle-arrow-down" aria-hidden="true"></i></div><div style="flex:1"><div class="tx-n">${rc.descricao}</div><div class="tx-m">${rc.data} · ${rc.pessoa}</div></div><div class="tx-a g">${fmt(rc.valor)}</div></div>`}).join('')||'<div class="empty">Nenhuma receita<br><span style="font-size:11px">Mande "recebi 5000 salário" no WhatsApp</span></div>'}
