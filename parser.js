@@ -37,7 +37,7 @@ Exemplos de parcelamento:
 Se a mensagem não parecer um gasto, retorne null.
 Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
   const response = await client.messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: message }],
@@ -75,7 +75,7 @@ Exemplos:
 Se a mensagem não parecer uma receita ou entrada de dinheiro, retorne null.
 Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
   const response = await client.messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 200,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: message }],
