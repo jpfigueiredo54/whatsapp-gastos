@@ -1,12 +1,28 @@
 const Anthropic = require("@anthropic-ai/sdk");
 const { getCategorias } = require("./sheets");
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// Cache de categorias — busca uma vez e reutiliza por 1 hora
+let categoriasCached = null;
+let categoriasCachedAt = 0;
+async function getCategoriasComCache() {
+  const agora = Date.now();
+  if (!categoriasCached || agora - categoriasCachedAt > 60 * 60 * 1000) {
+    categoriasCached = await getCategorias();
+    categoriasCachedAt = agora;
+    console.log('[parser] categorias atualizadas:', categoriasCached.length);
+  }
+  return categoriasCached;
+}
+
 const today = () => {
   return new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 };
 
 async function parseExpense(message) {
-  const categorias = await getCategorias();
+  const t0 = Date.now();
+  const categorias = await getCategoriasComCache();
+  console.log(`[parser] categorias em ${Date.now()-t0}ms`);
   const listaCategoria = categorias.join(", ");
   const SYSTEM_PROMPT = `Você é um assistente que extrai informações de gastos a partir de mensagens em português.
 Retorne APENAS um JSON válido com exatamente estas chaves:
@@ -36,12 +52,14 @@ Exemplos de parcelamento:
 - "Comprei um notebook em 6 vezes de 500 no Nubank" → parcelado: true, total_parcelas: 6, valor_parcela: "500.00", valor: "3000.00"
 Se a mensagem não parecer um gasto, retorne null.
 Retorne APENAS o JSON, sem texto adicional, sem markdown.`;
+  const t1 = Date.now();
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: message }],
   });
+  console.log(`[parser] claude respondeu em ${Date.now()-t1}ms`);
   const text = response.content[0]?.text?.trim();
   if (!text || text === "null") return null;
   try {
