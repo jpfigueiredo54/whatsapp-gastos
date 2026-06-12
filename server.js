@@ -201,6 +201,7 @@ app.post("/webhook", async (req, res) => {
   const from = req.body.From || "";
   const body = (req.body.Body || "").trim();
   const pessoa = identificarPessoa(from);
+  console.log(`[webhook] from=${from} pessoa=${pessoa} body="${body}"`);
 
   const twimlReply = (msg) =>
     res.set("Content-Type", "text/xml").send(`<Response><Message>${msg}</Message></Response>`);
@@ -307,8 +308,16 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // Tentar parsear como gasto
-    const expense = await parseExpense(body);
+    // Tentar parsear como gasto (com timeout de 12s para não estourar o Twilio)
+    const parseComTimeout = Promise.race([
+      parseExpense(body),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000))
+    ]);
+    let expense;
+    try { expense = await parseComTimeout; } catch(e) {
+      console.error('parseExpense timeout ou erro:', e.message);
+      return twimlReply("⏱️ O servidor demorou para responder. Tente novamente.");
+    }
     if (!expense) return twimlReply("❌ Não consegui identificar o gasto. Tente algo como: 'Pizza 60 reais, cartão Inter crédito'\n\nDigite */ajuda* para ver os comandos disponíveis.");
 
     pendentes[from] = expense;
