@@ -334,4 +334,16 @@ app.post("/webhook", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+
+  // Keep-alive: faz ping no próprio servidor a cada 14 minutos
+  // Render hiberna após 15min de inatividade no plano gratuito
+  const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(() => {
+    fetch(`${url}/ping`).catch(() => {});
+    console.log('[keep-alive] ping enviado');
+  }, 14 * 60 * 1000);
+});
+
+app.get('/ping', (req, res) => res.send('pong'));
