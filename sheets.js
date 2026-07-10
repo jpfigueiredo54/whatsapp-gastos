@@ -121,6 +121,29 @@ async function registrarParcelasMes() {
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
+  // Busca dias de fechamento de cada cartão
+  const resCartoes = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Cartões!A:C",
+  });
+  const cartoesFechamento = {};
+  (resCartoes.data.values || []).slice(1).forEach(row => {
+    if (row[0] && row[2]) {
+      cartoesFechamento[row[0].toLowerCase()] = parseInt(row[2]);
+    }
+  });
+
+  // Dia de lançamento de cada cartão = dia seguinte ao fechamento
+  const getDiaLancamento = (nomeCartao) => {
+    const key = (nomeCartao || "").toLowerCase();
+    for (const [cartao, diaFech] of Object.entries(cartoesFechamento)) {
+      if (key.includes(cartao) || cartao.includes(key)) {
+        return diaFech + 1; // D+1 após fechamento
+      }
+    }
+    return 1; // fallback: dia 1
+  };
+
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "Parcelas!A:H",
@@ -130,6 +153,7 @@ async function registrarParcelasMes() {
   if (rows.length <= 1) return 0;
 
   const agora = new Date();
+  const diaHoje = agora.getDate();
   const dataHoje = agora.toLocaleDateString("pt-BR");
   let registradas = 0;
 
@@ -145,6 +169,10 @@ async function registrarParcelasMes() {
     const parcelasPagas = parseInt(row[7] || "0");
 
     if (parcelasPagas >= totalParcelas) continue;
+
+    // Verifica se hoje é o dia de lançamento deste cartão
+    const diaLancamento = getDiaLancamento(cartao);
+    if (diaHoje !== diaLancamento) continue;
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
