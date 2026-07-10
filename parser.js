@@ -46,7 +46,7 @@ Regras:
 - "categoria": infira uma categoria razoável dentre estas opções: ${listaCategoria}
 - "descricao": descrição curta e clara do gasto
 - "metodo_pagamento": infira pelo contexto. Se não mencionado, use "não informado"
-- "cartao": nome do banco/cartão se mencionado (ex: Nubank, Inter, Itaú, C6), senão null
+- "cartao": nome COMPLETO do cartão como mencionado pelo usuário. Preserve "JP", "Isabella" e outros sufixos. Exemplos: "Nubank JP", "Nubank Isabella", "Latampass", "Nubank". Nunca abrevie ou remova sufixos do nome do cartão.
 Exemplos de parcelamento:
 - "TV 12x de 350" → parcelado: true, total_parcelas: 12, valor_parcela: "350.00", valor: "4200.00"
 - "Comprei um notebook em 6 vezes de 500 no Nubank" → parcelado: true, total_parcelas: 6, valor_parcela: "500.00", valor: "3000.00"
