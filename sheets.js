@@ -174,6 +174,8 @@ async function registrarParcelasMes() {
     const diaLancamento = getDiaLancamento(cartao);
     if (diaHoje !== diaLancamento) continue;
 
+    const novaParcelasPagas = parcelasPagas + 1;
+
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: "Gastos!A:H",
@@ -184,7 +186,7 @@ async function registrarParcelasMes() {
           dataHoje,
           valorParcela,
           categoria,
-          `${descricao} (parcela ${parcelasPagas + 1}/${totalParcelas})`,
+          `${descricao} (parcela ${novaParcelasPagas}/${totalParcelas})`,
           metodo,
           cartao,
           pessoa,
@@ -193,12 +195,38 @@ async function registrarParcelasMes() {
       },
     });
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `Parcelas!H${i + 1}`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [[parcelasPagas + 1]] },
-    });
+    if (novaParcelasPagas >= totalParcelas) {
+      // Última parcela — deleta a linha da aba Parcelas
+      const spreadsheetMetadata = await sheets.spreadsheets.get({ spreadsheetId });
+      const parcelasSheet = spreadsheetMetadata.data.sheets.find(s => s.properties.title === "Parcelas");
+      if (parcelasSheet) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [{
+              deleteDimension: {
+                range: {
+                  sheetId: parcelasSheet.properties.sheetId,
+                  dimension: "ROWS",
+                  startIndex: i, // i é 1-based na leitura mas 0-based aqui (linha i+1 no sheets = index i)
+                  endIndex: i + 1,
+                },
+              },
+            }],
+          },
+        });
+        // Ajusta o índice pois uma linha foi removida
+        i--;
+      }
+    } else {
+      // Atualiza contador de parcelas pagas
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Parcelas!H${i + 1}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[novaParcelasPagas]] },
+      });
+    }
 
     registradas++;
   }
