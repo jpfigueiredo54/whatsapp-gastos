@@ -303,6 +303,14 @@ app.post("/webhook", async (req, res) => {
     if (isReceita) {
       const receita = await parseReceita(body);
       if (receita) {
+        // Sobrescreve a pessoa com o nome mapeado do número WhatsApp
+        // só substitui se a mensagem não mencionar explicitamente outra pessoa
+        const pessoaMensagem = body.toLowerCase();
+        if (!pessoaMensagem.includes('isabella') && !pessoaMensagem.includes('isa')) {
+          receita.pessoa = pessoa;
+        } else {
+          receita.pessoa = 'Isabella';
+        }
         pendentesReceita[from] = receita;
         return twimlReply(`📋 Confirmar receita?\n\n👤 ${receita.pessoa}\n📅 ${receita.data}\n💰 R$ ${receita.valor}\n📝 ${receita.descricao}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
       }
