@@ -567,11 +567,16 @@ async function setMesesRel(n,el){mesesRel=n;document.querySelectorAll('#page-rel
 // PROJEÇÃO
 let projPessoa='todos';
 async function loadProjecao(){
-  document.getElementById('proj-tabela').innerHTML='<div class="loading">Calculando projeção...</div>';
+  const el=document.getElementById('proj-tabela');
+  if(el) el.innerHTML='<div class="loading">Calculando projeção...</div>';
   try{
     const d=await fetch(`/api/projecao?pessoa=${encodeURIComponent(projPessoa)}&meses=18`).then(r=>r.json());
+    if(d.error) throw new Error(d.error);
     renderProjecao(d);
-  }catch(e){console.error(e);document.getElementById('proj-tabela').innerHTML='<div class="empty">Erro ao carregar</div>';}
+  }catch(e){
+    console.error('projecao erro:',e);
+    if(el) el.innerHTML=`<div class="empty">Erro: ${e.message}<br><span style="font-size:11px">Tente novamente em instantes</span></div>`;
+  }
 }
 function setProjPessoa(p,el){
   projPessoa=p;
