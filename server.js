@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const { parseExpense, parseReceita } = require("./parser");
 const { appendToSheet, appendParcela, appendReceita, registrarParcelasMes, verificarAlertaBudget, getCategorias, adicionarCategoria } = require("./sheets");
-const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getApiReceitas, getApiFluxoCaixa, getApiSaldoIndividual } = require("./sheets2");
+const { getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo, getParcelasAbertas, getFaturas, getUltimoLancamento, deletarUltimoLancamento, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes, getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getApiReceitas, getApiFluxoCaixa, getApiSaldoIndividual, getApiProjecao } = require("./sheets2");
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -184,6 +184,13 @@ app.get("/api/fluxo", async (req, res) => {
 app.get("/api/saldo-individual", async (req, res) => {
   try { res.json(await getApiSaldoIndividual()); }
   catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/projecao", async (req, res) => {
+  try {
+    const { pessoa = 'todos', meses = 18 } = req.query;
+    res.json(await getApiProjecao(pessoa, parseInt(meses)));
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post("/parcelas/registrar", async (req, res) => {
