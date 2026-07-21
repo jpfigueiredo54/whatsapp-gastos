@@ -593,7 +593,7 @@ function renderProjecao(d){
   rows.push({label:'Receitas',key:'receitas',bold:true,color:'var(--green)',bg:'#f0fdf4'});
   // Subcategorias de receita por mês
   const pessoasRec=projPessoa==='todos'?['João Pedro','Isabella']:[projPessoa];
-  const SALARIOS={'João Pedro':19234,'Isabella':16675};
+  const SALARIOS={'João Pedro':21134,'Isabella':16675};
   pessoasRec.forEach(p=>{
     rows.push({label:'  '+p+' · Salário',values:meses.map(m=>{
       return SALARIOS[p]||0;
