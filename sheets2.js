@@ -913,11 +913,13 @@ async function getApiSaldoIndividual() {
 
 const CATEGORIAS_FIXAS = ['aluguel', 'luz', 'internet', 'diarista', 'assinaturas', 'seguros', 'academia', 'pets', 'condomínio', 'condominio'];
 
-// Salários líquidos fixos (bruto - 27.5%)
 const SALARIOS = {
-  'João Pedro': 19234,
+  'João Pedro': 21134, // 19.234 salário líquido + 1.900 iFood Benefícios
   'Isabella': 16675,
 };
+
+// Categorias excluídas das despesas variáveis (já cobertas pelas parcelas)
+const CATEGORIAS_EXCLUIR_VARIAVEL = ['viagem'];
 
 function receitasMes(m, a, pessoa = 'todos') {
   const pessoas = pessoa === 'todos'
@@ -971,6 +973,8 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
 
     Object.entries(porCategoria).forEach(([cat, v]) => {
       const catLow = cat.toLowerCase().trim();
+      // Viagem fica só nas parcelas, não nas variáveis
+      if (CATEGORIAS_EXCLUIR_VARIAVEL.some(e => catLow.includes(e))) return;
       if (CATEGORIAS_FIXAS.some(f => catLow.includes(f))) {
         mediaDespesasFixas[cat] = (mediaDespesasFixas[cat] || 0) + v / 3;
       } else {
