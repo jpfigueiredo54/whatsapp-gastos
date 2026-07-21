@@ -523,7 +523,10 @@ async function getApiTransacoes(mes, ano, cartao, pessoa, tipo) {
     cartao: row[5] || "",
     responsavel: row[6] || "",
     tipo: row[7] || "",
-  })).reverse();
+  })).sort((a, b) => {
+    const pd = d => { const [di,me,an] = d.split('/'); return new Date(an, me-1, di); };
+    return pd(b.data) - pd(a.data);
+  });
   return { transacoes, total: transacoes.reduce((acc, t) => acc + t.valor, 0) };
 }
 
@@ -864,13 +867,23 @@ async function getApiSaldoIndividual() {
   // Buscar receitas do mês
   const { porPessoa: receitasPorPessoa } = await getReceitasPorMes(mesAtual, anoAtual);
 
+  // Normaliza nome: "Joao", "João Pedro", "joao pedro" → "João Pedro"
+  function normalizarPessoa(nome) {
+    if (!nome) return "Desconhecido";
+    const n = nome.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (n.includes("joao") || n.includes("joão") || n === "jp") return "João Pedro";
+    if (n.includes("isabella") || n.includes("isa")) return "Isabella";
+    if (n === "ambos") return "Ambos";
+    return nome.trim();
+  }
+
   // Calcular gastos por pessoa (Ambos = divide 50/50)
   const gastosPorPessoa = {};
   gastosMes.forEach(row => {
     const val = parseVal(row[1]);
-    const responsavel = row[6] || "Desconhecido";
+    const responsavel = normalizarPessoa(row[6]);
 
-    if (responsavel.toLowerCase() === "ambos") {
+    if (responsavel === "Ambos") {
       const metade = val / 2;
       gastosPorPessoa["João Pedro"] = (gastosPorPessoa["João Pedro"] || 0) + metade;
       gastosPorPessoa["Isabella"] = (gastosPorPessoa["Isabella"] || 0) + metade;
@@ -879,25 +892,201 @@ async function getApiSaldoIndividual() {
     }
   });
 
+  // Normaliza receitas também
+  const receitasNormalizadas = {};
+  Object.entries(receitasPorPessoa).forEach(([p, v]) => {
+    const pn = normalizarPessoa(p);
+    receitasNormalizadas[pn] = (receitasNormalizadas[pn] || 0) + v;
+  });
+
   // Montar resultado por pessoa
-  const pessoas = [...new Set([...Object.keys(gastosPorPessoa), ...Object.keys(receitasPorPessoa)])];
+  const pessoas = [...new Set([...Object.keys(gastosPorPessoa), ...Object.keys(receitasNormalizadas)])];
   const resultado = {};
   pessoas.forEach(p => {
-    const receitas = receitasPorPessoa[p] || 0;
+    const receitas = receitasNormalizadas[p] || 0;
     const gastos = gastosPorPessoa[p] || 0;
-    resultado[p] = {
-      receitas,
-      gastos,
-      saldo: receitas - gastos,
-    };
+    resultado[p] = { receitas, gastos, saldo: receitas - gastos };
   });
 
   return resultado;
+}
+
+const CATEGORIAS_FIXAS = ['aluguel', 'luz', 'internet', 'diarista', 'assinaturas', 'seguros', 'academia', 'pets', 'condomínio', 'condominio'];
+
+async function getApiProjecao(pessoa = 'todos', meses = 18) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  const agora = new Date();
+  const mesAtual = agora.getMonth();
+  const anoAtual = agora.getFullYear();
+
+  // Busca saldo inicial
+  let saldoInicial = 0;
+  try {
+    const resCfg = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Config!A:B' });
+    const cfgRow = (resCfg.data.values || []).slice(1).find(r => (r[0] || '').toLowerCase() === 'saldo_inicial');
+    if (cfgRow) saldoInicial = parseVal(cfgRow[1] || '0');
+  } catch(e) {}
+
+  // Calcula saldo acumulado até hoje baseado no fluxo histórico
+  const saldoAtual = await getSaldoAcumuladoAtual(saldoInicial, mesAtual, anoAtual);
+
+  // Busca médias dos últimos 3 meses para receitas e despesas variáveis por pessoa
+  const mediaReceitas = { 'João Pedro': 0, 'Isabella': 0 };
+  const mediaDespesasVariaveis = {};
+  const mediaDespesasFixas = {};
+
+  for (let i = 1; i <= 3; i++) {
+    let m = mesAtual - i;
+    let a = anoAtual;
+    if (m < 0) { m += 12; a--; }
+
+    const { porCategoria, porPessoa } = await getGastosPorMes(m, a);
+    const { porPessoa: recPorPessoa } = await getReceitasPorMes(m, a);
+
+    // Receitas
+    Object.entries(recPorPessoa).forEach(([p, v]) => {
+      const pn = normalizarNome(p);
+      mediaReceitas[pn] = (mediaReceitas[pn] || 0) + v / 3;
+    });
+
+    // Despesas por categoria
+    Object.entries(porCategoria).forEach(([cat, v]) => {
+      const catLow = cat.toLowerCase().trim();
+      if (CATEGORIAS_FIXAS.some(f => catLow.includes(f))) {
+        mediaDespesasFixas[cat] = (mediaDespesasFixas[cat] || 0) + v / 3;
+      } else {
+        mediaDespesasVariaveis[cat] = (mediaDespesasVariaveis[cat] || 0) + v / 3;
+      }
+    });
+  }
+
+  // Busca parcelas ativas e projeção por mês
+  const resParcelas = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Parcelas!A:H' });
+  const parcelasRows = (resParcelas.data.values || []).slice(1).filter(r => r[0]);
+
+  // Busca dias de fechamento dos cartões
+  const resCartoes = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Cartões!A:C' });
+  const cartoesFechamento = {};
+  (resCartoes.data.values || []).slice(1).forEach(r => {
+    if (r[0] && r[2]) cartoesFechamento[r[0].toLowerCase()] = parseInt(r[2]);
+  });
+
+  // Monta projeção mês a mês
+  const mesesProjecao = [];
+  let acumulado = saldoAtual;
+
+  for (let i = 0; i < meses; i++) {
+    let m = mesAtual + i;
+    let a = anoAtual;
+    while (m > 11) { m -= 12; a++; }
+
+    const nomeMes = new Date(a, m, 1).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+
+    // Receitas filtradas por pessoa
+    let receitasMes = 0;
+    if (pessoa === 'todos' || pessoa === 'João Pedro') receitasMes += mediaReceitas['João Pedro'] || 0;
+    if (pessoa === 'todos' || pessoa === 'Isabella') receitasMes += mediaReceitas['Isabella'] || 0;
+
+    // Despesas fixas (divididas se ambos, ou proporcionais)
+    let despesasFixasMes = 0;
+    Object.values(mediaDespesasFixas).forEach(v => {
+      despesasFixasMes += pessoa === 'todos' ? v : v / 2;
+    });
+
+    // Despesas variáveis
+    let despesasVariaveisMes = 0;
+    const varPorCat = {};
+    Object.entries(mediaDespesasVariaveis).forEach(([cat, v]) => {
+      const val = pessoa === 'todos' ? v : v / 2;
+      varPorCat[cat] = val;
+      despesasVariaveisMes += val;
+    });
+
+    // Parcelas do mês
+    let parcelasMes = 0;
+    const parcelasPorDesc = {};
+    parcelasRows.forEach(row => {
+      const pagas = parseInt(row[7] || 0);
+      const total = parseInt(row[6] || 0);
+      const restantes = total - pagas;
+      if (restantes <= 0 || i >= restantes) return;
+
+      // Verifica se o mês i cai no ciclo desta parcela
+      const cartao = (row[3] || '').toLowerCase();
+      const diaFech = Object.entries(cartoesFechamento).find(([c]) => cartao.includes(c))?.[1] || 8;
+      // Parcela lança no mês seguinte ao fechamento — simplificamos: lança no mês i
+      const val = parseVal(row[1] || '0');
+      const pessoaParcela = normalizarNome(row[5] || '');
+      let valFiltrado = val;
+      if (pessoa !== 'todos' && pessoaParcela && pessoaParcela !== pessoa) {
+        // Latampass é dividido
+        if (cartao.includes('latampass')) valFiltrado = val / 2;
+        else return;
+      }
+      if (cartao.includes('latampass') && pessoa !== 'todos') valFiltrado = val / 2;
+
+      parcelasMes += valFiltrado;
+      parcelasPorDesc[row[0]] = valFiltrado;
+    });
+
+    const saldoMes = receitasMes - despesasFixasMes - despesasVariaveisMes - parcelasMes;
+    acumulado += saldoMes;
+
+    mesesProjecao.push({
+      mes: nomeMes,
+      mesNum: m,
+      ano: a,
+      receitas: Math.round(receitasMes * 100) / 100,
+      despesasFixas: Math.round(despesasFixasMes * 100) / 100,
+      despesasVariaveis: Math.round(despesasVariaveisMes * 100) / 100,
+      parcelas: Math.round(parcelasMes * 100) / 100,
+      totalDespesas: Math.round((despesasFixasMes + despesasVariaveisMes + parcelasMes) * 100) / 100,
+      saldo: Math.round(saldoMes * 100) / 100,
+      acumulado: Math.round(acumulado * 100) / 100,
+      detalhes: {
+        fixas: mediaDespesasFixas,
+        variaveis: varPorCat,
+        parcelasDesc: parcelasPorDesc,
+      },
+    });
+  }
+
+  return {
+    saldoAtual,
+    meses: mesesProjecao,
+    mediaReceitas,
+    mediaDespesasFixas,
+    mediaDespesasVariaveis,
+  };
+}
+
+function normalizarNome(nome) {
+  const n = (nome || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (n.includes('joao') || n === 'jp') return 'João Pedro';
+  if (n.includes('isabella') || n === 'isa') return 'Isabella';
+  return nome.trim();
+}
+
+async function getSaldoAcumuladoAtual(saldoInicial, mesAtual, anoAtual) {
+  // Soma saldos mensais desde o início até o mês anterior
+  let acumulado = saldoInicial;
+  for (let i = 11; i >= 1; i--) {
+    let m = mesAtual - i;
+    let a = anoAtual;
+    if (m < 0) { m += 12; a--; }
+    const { total: gastos } = await getGastosPorMes(m, a);
+    const { total: receitas } = await getReceitasPorMes(m, a);
+    if (gastos > 0 || receitas > 0) acumulado += receitas - gastos;
+  }
+  return Math.round(acumulado * 100) / 100;
 }
 
 module.exports = {
   getResumoMes, getResumoCategoria, getRelatorioSemana, getFechamentoMes, getComparativo,
   getParcelasAbertas, getFaturas, getApiResumo, getApiParcelas, getApiFaturas, getApiTransacoes,
   getApiRelatorio, getRitmo, getApiFechamentoMesAnterior, getUltimoLancamento, deletarUltimoLancamento,
-  getApiReceitas, getApiFluxoCaixa, getApiSaldoIndividual,
+  getApiReceitas, getApiFluxoCaixa, getApiSaldoIndividual, getApiProjecao,
 };
