@@ -583,36 +583,98 @@ function renderProjecao(d){
   if(!d||!d.meses) return;
   setHero('proj-acumulado',d.saldoAtual);
   const meses=d.meses;
-  // Tabela horizontal estilo planilha
-  const linhas=[
-    {label:'Receitas',key:'receitas',color:'var(--green)',bold:true},
-    {label:'Desp. Fixas',key:'despesasFixas',color:'var(--red)',bold:false},
-    {label:'Desp. Variáveis',key:'despesasVariaveis',color:'var(--red)',bold:false},
-    {label:'Parcelas',key:'parcelas',color:'var(--red)',bold:false},
-    {label:'Total Despesas',key:'totalDespesas',color:'var(--red)',bold:true},
-    {label:'Saldo',key:'saldo',color:'',bold:true,dynamic:true},
-    {label:'Acumulado',key:'acumulado',color:'var(--green)',bold:true},
-  ];
-  const html=`<table style="border-collapse:collapse;font-size:11px;min-width:${meses.length*90+140}px">
-    <thead>
-      <tr>
-        <th style="text-align:left;padding:8px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1;min-width:120px">Categoria</th>
-        ${meses.map(m=>`<th style="padding:8px 10px;text-align:right;font-size:9px;color:var(--t3);white-space:nowrap;min-width:80px">${m.mes}</th>`).join('')}
-      </tr>
-    </thead>
-    <tbody>
-      ${linhas.map(l=>`
-        <tr style="border-top:.5px solid var(--border)">
-          <td style="padding:7px 12px;font-weight:${l.bold?'500':'400'};color:${l.color||'var(--t1)'};white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1">${l.label}</td>
-          ${meses.map(m=>{
-            const v=m[l.key]||0;
-            const c=l.dynamic?(v>=0?'var(--green)':'var(--red)'):l.color;
-            const prefix=l.key==='saldo'&&v>=0?'+':'';
-            return `<td style="padding:7px 10px;text-align:right;font-weight:${l.bold?'500':'400'};color:${c||'var(--t1)'};white-space:nowrap">${prefix}${fmt(v)}</td>`;
-          }).join('')}
-        </tr>`).join('')}
-    </tbody>
-  </table>`;
+
+  const fmt2=v=>Math.round(v).toLocaleString('pt-BR');
+
+  // Linhas da tabela com subcategorias
+  const rows=[];
+
+  // RECEITAS
+  rows.push({label:'Receitas',key:'receitas',bold:true,color:'var(--green)',bg:'#f0fdf4'});
+  // Subcategorias de receita por mês
+  const pessoasRec=projPessoa==='todos'?['João Pedro','Isabella']:[projPessoa];
+  const SALARIOS={'João Pedro':19234,'Isabella':16675};
+  pessoasRec.forEach(p=>{
+    rows.push({label:'  '+p+' · Salário',values:meses.map(m=>{
+      return SALARIOS[p]||0;
+    }),indent:true,color:'var(--green)'});
+    rows.push({label:'  '+p+' · 13º',values:meses.map(m=>{
+      const sal=SALARIOS[p]||0;
+      if(m.mesNum===10) return sal*0.6;
+      if(m.mesNum===11) return sal*0.4;
+      return 0;
+    }),indent:true,color:'var(--green)',zeroHide:true});
+    rows.push({label:'  '+p+' · Bônus',values:meses.map(m=>{
+      if(m.mesNum===3) return (SALARIOS[p]||0)*3;
+      return 0;
+    }),indent:true,color:'var(--green)',zeroHide:true});
+  });
+
+  // DESPESAS FIXAS
+  rows.push({label:'Desp. Fixas',key:'despesasFixas',bold:true,color:'var(--red)',bg:'#fff5f5'});
+  Object.entries(d.mediaDespesasFixas||{}).sort((a,b)=>b[1]-a[1]).forEach(([cat,v])=>{
+    rows.push({label:'  '+cat,values:meses.map(()=>v),indent:true,color:'var(--red)'});
+  });
+
+  // DESPESAS VARIÁVEIS
+  rows.push({label:'Desp. Variáveis',key:'despesasVariaveis',bold:true,color:'var(--red)',bg:'#fff5f5'});
+  Object.entries(d.mediaDespesasVariaveis||{}).sort((a,b)=>b[1]-a[1]).forEach(([cat,v])=>{
+    rows.push({label:'  '+cat,values:meses.map(()=>v),indent:true,color:'var(--red)'});
+  });
+
+  // PARCELAS
+  rows.push({label:'Parcelas',key:'parcelas',bold:true,color:'var(--red)',bg:'#fff5f5'});
+
+  // SALDO E ACUMULADO
+  rows.push({label:'Saldo',key:'saldo',bold:true,dynamic:true,bg:'#fafaf8',border:true});
+  rows.push({label:'Acumulado',key:'acumulado',bold:true,color:'var(--green)',bg:'#f0fdf4'});
+
+  const thStyle='padding:7px 10px;text-align:right;font-size:9px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;border-bottom:.5px solid var(--border)';
+  const html=`<div style="overflow-x:auto">
+    <table style="border-collapse:collapse;font-size:11px;min-width:${meses.length*90+160}px;width:100%">
+      <thead>
+        <tr>
+          <th style="${thStyle};text-align:left;position:sticky;left:0;background:var(--bg);z-index:2;min-width:150px;max-width:180px">Categoria</th>
+          ${meses.map(m=>`<th style="${thStyle};min-width:88px">${m.mes}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(row=>{
+          if(row.key){
+            // Linha de total — usa dados do mês
+            const vals=meses.map(m=>{
+              const v=m[row.key]||0;
+              if(row.dynamic){
+                const c=v>=0?'color:#16a34a':'color:#dc2626';
+                return `<td style="padding:7px 10px;text-align:right;font-weight:600;${c};white-space:nowrap;background:${row.bg||'var(--card)'}">${v>=0?'+':''}${fmt2(v)}</td>`;
+              }
+              const c=row.color?`color:${row.color}`:'';
+              return `<td style="padding:7px 10px;text-align:right;font-weight:${row.bold?'600':'400'};${c};white-space:nowrap;background:${row.bg||'var(--card)'}">${fmt2(Math.abs(v))}</td>`;
+            }).join('');
+            return `<tr style="border-top:1px solid var(--border)">
+              <td style="padding:7px 12px;font-weight:${row.bold?'600':'400'};color:${row.color||'var(--t1)'};white-space:nowrap;position:sticky;left:0;background:${row.bg||'var(--bg)'};z-index:1;border-top:1px solid var(--border)">${row.label}</td>
+              ${vals}
+            </tr>`;
+          } else {
+            // Linha de subcategoria
+            const vals=row.values.map(v=>{
+              if(row.zeroHide&&v===0) return `<td style="padding:5px 10px;text-align:right;color:var(--border);font-size:10px;white-space:nowrap">—</td>`;
+              return `<td style="padding:5px 10px;text-align:right;color:${row.color||'var(--t2)'};font-size:10px;white-space:nowrap">${fmt2(Math.abs(v))}</td>`;
+            }).join('');
+            return `<tr>
+              <td style="padding:5px 12px 5px 20px;color:var(--t3);font-size:10px;white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1">${row.label.trim()}</td>
+              ${vals}
+            </tr>`;
+          }
+        }).join('')}
+      </tbody>
+    </table>
+  </div>
+  <div style="background:#f0fdf4;border-radius:12px;padding:12px;margin-top:12px;font-size:11px;color:var(--green-t)">
+    <div style="font-weight:600;margin-bottom:4px">Em ${meses.length} meses</div>
+    <div>Patrimônio estimado: <strong>${fmt(meses[meses.length-1]?.acumulado||0)}</strong></div>
+    <div style="color:#4ade80;margin-top:2px;font-size:10px">+${fmt((meses[meses.length-1]?.acumulado||0)-d.saldoAtual)} vs hoje</div>
+  </div>`;
   document.getElementById('proj-tabela').innerHTML=html;
 }
 </script>
