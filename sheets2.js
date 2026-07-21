@@ -913,6 +913,31 @@ async function getApiSaldoIndividual() {
 
 const CATEGORIAS_FIXAS = ['aluguel', 'luz', 'internet', 'diarista', 'assinaturas', 'seguros', 'academia', 'pets', 'condomínio', 'condominio'];
 
+// Salários líquidos fixos (bruto - 27.5%)
+const SALARIOS = {
+  'João Pedro': 19234,
+  'Isabella': 16675,
+};
+
+function receitasMes(m, a, pessoa = 'todos') {
+  const pessoas = pessoa === 'todos'
+    ? ['João Pedro', 'Isabella']
+    : [pessoa];
+
+  let total = 0;
+  pessoas.forEach(p => {
+    const sal = SALARIOS[p] || 0;
+    // Salário base
+    total += sal;
+    // 13º: 60% em novembro, 40% em dezembro
+    if (m === 10) total += sal * 0.60; // novembro (índice 10)
+    if (m === 11) total += sal * 0.40; // dezembro (índice 11)
+    // Bônus: 3x em abril
+    if (m === 3) total += sal * 3; // abril (índice 3)
+  });
+  return Math.round(total * 100) / 100;
+}
+
 async function getApiProjecao(pessoa = 'todos', meses = 18) {
   const auth = getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
@@ -933,8 +958,7 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
   // Calcula saldo acumulado até hoje baseado no fluxo histórico
   const saldoAtual = await getSaldoAcumuladoAtual(saldoInicial, mesAtual, anoAtual);
 
-  // Busca médias dos últimos 3 meses para receitas e despesas variáveis por pessoa
-  const mediaReceitas = { 'João Pedro': 0, 'Isabella': 0 };
+  // Busca médias dos últimos 3 meses apenas para despesas variáveis
   const mediaDespesasVariaveis = {};
   const mediaDespesasFixas = {};
 
@@ -943,16 +967,8 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
     let a = anoAtual;
     if (m < 0) { m += 12; a--; }
 
-    const { porCategoria, porPessoa } = await getGastosPorMes(m, a);
-    const { porPessoa: recPorPessoa } = await getReceitasPorMes(m, a);
+    const { porCategoria } = await getGastosPorMes(m, a);
 
-    // Receitas
-    Object.entries(recPorPessoa).forEach(([p, v]) => {
-      const pn = normalizarNome(p);
-      mediaReceitas[pn] = (mediaReceitas[pn] || 0) + v / 3;
-    });
-
-    // Despesas por categoria
     Object.entries(porCategoria).forEach(([cat, v]) => {
       const catLow = cat.toLowerCase().trim();
       if (CATEGORIAS_FIXAS.some(f => catLow.includes(f))) {
@@ -985,10 +1001,8 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
 
     const nomeMes = new Date(a, m, 1).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
 
-    // Receitas filtradas por pessoa
-    let receitasMes = 0;
-    if (pessoa === 'todos' || pessoa === 'João Pedro') receitasMes += mediaReceitas['João Pedro'] || 0;
-    if (pessoa === 'todos' || pessoa === 'Isabella') receitasMes += mediaReceitas['Isabella'] || 0;
+    // Receitas com salários fixos + 13º + bônus
+    const recMes = receitasMes(m, a, pessoa);
 
     // Despesas fixas (divididas se ambos, ou proporcionais)
     let despesasFixasMes = 0;
@@ -1032,14 +1046,14 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
       parcelasPorDesc[row[0]] = valFiltrado;
     });
 
-    const saldoMes = receitasMes - despesasFixasMes - despesasVariaveisMes - parcelasMes;
+    const saldoMes = recMes - despesasFixasMes - despesasVariaveisMes - parcelasMes;
     acumulado += saldoMes;
 
     mesesProjecao.push({
       mes: nomeMes,
       mesNum: m,
       ano: a,
-      receitas: Math.round(receitasMes * 100) / 100,
+      receitas: recMes,
       despesasFixas: Math.round(despesasFixasMes * 100) / 100,
       despesasVariaveis: Math.round(despesasVariaveisMes * 100) / 100,
       parcelas: Math.round(parcelasMes * 100) / 100,
@@ -1057,9 +1071,9 @@ async function getApiProjecao(pessoa = 'todos', meses = 18) {
   return {
     saldoAtual,
     meses: mesesProjecao,
-    mediaReceitas,
     mediaDespesasFixas,
     mediaDespesasVariaveis,
+    salarios: SALARIOS,
   };
 }
 
