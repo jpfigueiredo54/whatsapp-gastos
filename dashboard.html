@@ -333,20 +333,30 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- PROJEÇÃO -->
 <div class="page" id="page-projecao">
   <div class="hdr">
-    <div class="lab">Projeção financeira</div>
-    <div class="big" id="proj-acumulado"><span class="rs">R$ </span>—</div>
-    <div class="sub" id="proj-sub">patrimônio atual</div>
+    <div class="lab">Projeção financeira · 18 meses</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+      <div class="card" style="padding:12px">
+        <div style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;font-weight:600">Hoje</div>
+        <div style="font-size:16px;font-weight:300;color:var(--t1)" id="proj-hoje">—</div>
+      </div>
+      <div class="card" style="padding:12px;background:var(--green-bg)">
+        <div style="font-size:8px;color:var(--green-t);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;font-weight:600">Em 12m</div>
+        <div style="font-size:16px;font-weight:300;color:var(--green-t)" id="proj-12m">—</div>
+      </div>
+      <div class="card" style="padding:12px;background:var(--green-bg)">
+        <div style="font-size:8px;color:var(--green-t);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;font-weight:600">Em 18m</div>
+        <div style="font-size:16px;font-weight:300;color:var(--green-t)" id="proj-18m">—</div>
+      </div>
+    </div>
   </div>
-  <div style="padding:0 20px 16px;display:flex;gap:8px">
+  <div style="padding:0 20px 14px;display:flex;gap:6px">
     <button class="pbtn on" onclick="setProjPessoa('todos',this)">Todos</button>
     <button class="pbtn" onclick="setProjPessoa('João Pedro',this)">João</button>
     <button class="pbtn" onclick="setProjPessoa('Isabella',this)">Isabella</button>
   </div>
   <div class="sec">
-    <div class="sec-hd"><span class="sec-ttl">Próximos 18 meses</span></div>
-    <div style="overflow-x:auto">
-      <div id="proj-tabela"><div class="loading">Carregando...</div></div>
-    </div>
+    <div class="sec-hd"><span class="sec-ttl">Mês a mês</span></div>
+    <div id="proj-tabela"><div class="loading">Carregando...</div></div>
   </div>
 </div>
 
@@ -586,102 +596,142 @@ function setProjPessoa(p,el){
 }
 function renderProjecao(d){
   if(!d||!d.meses) return;
-  setHero('proj-acumulado',d.saldoAtual);
   const meses=d.meses;
+  const f2=v=>Math.round(Math.abs(v)).toLocaleString('pt-BR');
 
-  const fmt2=v=>Math.round(v).toLocaleString('pt-BR');
+  // Header cards
+  const hoje=d.saldoAtual;
+  const em12=meses[11]?.acumulado||0;
+  const em18=meses[17]?.acumulado||0;
+  document.getElementById('proj-hoje').textContent='R$ '+f2(hoje);
+  document.getElementById('proj-12m').textContent='R$ '+f2(em12);
+  document.getElementById('proj-18m').textContent='R$ '+f2(em18);
 
-  // Linhas da tabela com subcategorias
+  const SALARIOS={'João Pedro':21134,'Isabella':16675};
+  const pessoasRec=projPessoa==='todos'?['João Pedro','Isabella']:[projPessoa];
+
+  // Detecta meses especiais
+  const isBônus=m=>m.mesNum===3;
+  const is13Nov=m=>m.mesNum===10;
+  const is13Dez=m=>m.mesNum===11;
+  const isEspecial=m=>isBônus(m)||is13Nov(m)||is13Dez(m);
+
+  const colBg=m=>isBônus(m)?'#FEF9C3':is13Nov(m)||is13Dez(m)?'#DBEAFE':'';
+
+  // Build rows
   const rows=[];
 
-  // RECEITAS
-  rows.push({label:'Receitas',key:'receitas',bold:true,color:'var(--green)',bg:'#f0fdf4'});
-  // Subcategorias de receita por mês
-  const pessoasRec=projPessoa==='todos'?['João Pedro','Isabella']:[projPessoa];
-  const SALARIOS={'João Pedro':21134,'Isabella':16675};
+  // ── RECEITAS ──
+  rows.push({type:'group',label:'RECEITAS',color:var_green_t,bg:'#F0FDF4'});
   pessoasRec.forEach(p=>{
-    rows.push({label:'  '+p+' · Salário',values:meses.map(m=>{
-      return SALARIOS[p]||0;
-    }),indent:true,color:'var(--green)'});
-    rows.push({label:'  '+p+' · 13º',values:meses.map(m=>{
-      const sal=SALARIOS[p]||0;
-      if(m.mesNum===10) return sal*0.6;
-      if(m.mesNum===11) return sal*0.4;
-      return 0;
-    }),indent:true,color:'var(--green)',zeroHide:true});
-    rows.push({label:'  '+p+' · Bônus',values:meses.map(m=>{
-      if(m.mesNum===3) return (SALARIOS[p]||0)*3;
-      return 0;
-    }),indent:true,color:'var(--green)',zeroHide:true});
+    const sal=SALARIOS[p]||0;
+    rows.push({type:'sub',label:p+' · Salário',values:meses.map(()=>sal),color:'var(--green-t)'});
+    rows.push({type:'sub',label:p+' · 13º Nov',values:meses.map(m=>m.mesNum===10?sal*0.6:0),color:'#185FA5',zeroHide:true,tag:'13º'});
+    rows.push({type:'sub',label:p+' · 13º Dez',values:meses.map(m=>m.mesNum===11?sal*0.4:0),color:'#185FA5',zeroHide:true,tag:'13º'});
+    rows.push({type:'sub',label:p+' · Bônus',values:meses.map(m=>m.mesNum===3?sal*3:0),color:'#854D0E',zeroHide:true,tag:'bônus'});
   });
+  rows.push({type:'total',label:'Total Receitas',key:'receitas',color:'var(--green-t)',bg:'#DCFCE7',border:true});
 
-  // DESPESAS FIXAS
-  rows.push({label:'Desp. Fixas',key:'despesasFixas',bold:true,color:'var(--red)',bg:'#fff5f5'});
+  // ── DESPESAS FIXAS ──
+  rows.push({type:'group',label:'DESPESAS FIXAS',color:'var(--red-t)',bg:'#FEF2F2'});
   Object.entries(d.mediaDespesasFixas||{}).sort((a,b)=>b[1]-a[1]).forEach(([cat,v])=>{
-    rows.push({label:'  '+cat,values:meses.map(()=>v),indent:true,color:'var(--red)'});
+    rows.push({type:'sub',label:cat,values:meses.map(()=>v),color:'var(--red)',neg:true});
   });
 
-  // DESPESAS VARIÁVEIS
-  rows.push({label:'Desp. Variáveis',key:'despesasVariaveis',bold:true,color:'var(--red)',bg:'#fff5f5'});
+  // ── DESPESAS VARIÁVEIS ──
+  rows.push({type:'group',label:'DESPESAS VARIÁVEIS',color:'var(--red-t)',bg:'#FEF2F2'});
   Object.entries(d.mediaDespesasVariaveis||{}).sort((a,b)=>b[1]-a[1]).forEach(([cat,v])=>{
-    rows.push({label:'  '+cat,values:meses.map(()=>v),indent:true,color:'var(--red)'});
+    rows.push({type:'sub',label:cat,values:meses.map(()=>v),color:'var(--red)',neg:true});
   });
 
-  // PARCELAS
-  rows.push({label:'Parcelas',key:'parcelas',bold:true,color:'var(--red)',bg:'#fff5f5'});
+  // ── PARCELAS ──
+  rows.push({type:'group',label:'PARCELAS',color:'var(--red-t)',bg:'#FEF2F2'});
+  rows.push({type:'total',label:'Total Parcelas',key:'parcelas',color:'var(--red)',bg:'#FEE2E2',neg:true,border:false});
 
-  // SALDO E ACUMULADO
-  rows.push({label:'Saldo',key:'saldo',bold:true,dynamic:true,bg:'#fafaf8',border:true});
-  rows.push({label:'Acumulado',key:'acumulado',bold:true,color:'var(--green)',bg:'#f0fdf4'});
+  // ── SEPARADOR ──
+  rows.push({type:'spacer'});
 
-  const thStyle='padding:7px 10px;text-align:right;font-size:9px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;border-bottom:.5px solid var(--border)';
-  const html=`<div style="overflow-x:auto">
-    <table style="border-collapse:collapse;font-size:11px;min-width:${meses.length*90+160}px;width:100%">
-      <thead>
-        <tr>
-          <th style="${thStyle};text-align:left;position:sticky;left:0;background:var(--bg);z-index:2;min-width:150px;max-width:180px">Categoria</th>
-          ${meses.map(m=>`<th style="${thStyle};min-width:88px">${m.mes}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map(row=>{
-          if(row.key){
-            // Linha de total — usa dados do mês
-            const vals=meses.map(m=>{
-              const v=m[row.key]||0;
-              if(row.dynamic){
-                const c=v>=0?'color:#16a34a':'color:#dc2626';
-                return `<td style="padding:7px 10px;text-align:right;font-weight:600;${c};white-space:nowrap;background:${row.bg||'var(--card)'}">${v>=0?'+':''}${fmt2(v)}</td>`;
-              }
-              const c=row.color?`color:${row.color}`:'';
-              return `<td style="padding:7px 10px;text-align:right;font-weight:${row.bold?'600':'400'};${c};white-space:nowrap;background:${row.bg||'var(--card)'}">${fmt2(Math.abs(v))}</td>`;
-            }).join('');
-            return `<tr style="border-top:1px solid var(--border)">
-              <td style="padding:7px 12px;font-weight:${row.bold?'600':'400'};color:${row.color||'var(--t1)'};white-space:nowrap;position:sticky;left:0;background:${row.bg||'var(--bg)'};z-index:1;border-top:1px solid var(--border)">${row.label}</td>
-              ${vals}
-            </tr>`;
-          } else {
-            // Linha de subcategoria
-            const vals=row.values.map(v=>{
-              if(row.zeroHide&&v===0) return `<td style="padding:5px 10px;text-align:right;color:var(--border);font-size:10px;white-space:nowrap">—</td>`;
-              return `<td style="padding:5px 10px;text-align:right;color:${row.color||'var(--t2)'};font-size:10px;white-space:nowrap">${fmt2(Math.abs(v))}</td>`;
-            }).join('');
-            return `<tr>
-              <td style="padding:5px 12px 5px 20px;color:var(--t3);font-size:10px;white-space:nowrap;position:sticky;left:0;background:var(--bg);z-index:1">${row.label.trim()}</td>
-              ${vals}
-            </tr>`;
-          }
+  // ── RESULTADOS ──
+  rows.push({type:'result',label:'Saldo do mês',key:'saldo',dynamic:true,bg:'#FAFAF8',bold:true,border:true});
+  rows.push({type:'result',label:'Patrimônio acumulado',key:'acumulado',color:'var(--green-t)',bg:'#F0FDF4',bold:true,big:true});
+
+  // Build table
+  const thBase='padding:8px 12px;text-align:right;font-size:9px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;border-bottom:1.5px solid var(--border)';
+  const stickyCol='position:sticky;left:0;z-index:2';
+
+  let html=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+  <table style="border-collapse:collapse;font-size:11px;min-width:${meses.length*94+180}px;width:100%">
+  <thead><tr>
+    <th style="${thBase};text-align:left;${stickyCol};background:var(--bg);min-width:160px">Categoria</th>
+    ${meses.map(m=>`<th style="${thBase};min-width:86px;background:${colBg(m)||'transparent'}">${m.mes}${isEspecial(m)?`<div style="font-size:7px;color:${isBônus(m)?'#854D0E':'#185FA5'};margin-top:1px">${isBônus(m)?'bônus':is13Nov(m)?'13º 60%':'13º 40%'}</div>`:''}</th>`).join('')}
+  </tr></thead>
+  <tbody>`;
+
+  rows.forEach(row=>{
+    if(row.type==='spacer'){
+      html+=`<tr><td colspan="${meses.length+1}" style="height:6px;background:var(--bg)"></td></tr>`;
+      return;
+    }
+    if(row.type==='group'){
+      html+=`<tr>
+        <td colspan="${meses.length+1}" style="padding:8px 12px 4px;font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:${row.color};background:${row.bg};${stickyCol}">${row.label}</td>
+      </tr>`;
+      return;
+    }
+    if(row.type==='sub'){
+      // Linha de subcategoria
+      const allZero=row.values&&row.values.every(v=>v===0);
+      if(allZero&&row.zeroHide) return;
+      html+=`<tr>
+        <td style="padding:5px 12px 5px 20px;font-size:10px;color:var(--t3);${stickyCol};background:var(--bg);white-space:nowrap">${row.label}${row.tag?`<span style="font-size:8px;background:${row.tag==='bônus'?'#FEF3C7':'#DBEAFE'};color:${row.tag==='bônus'?'#854D0E':'#185FA5'};padding:1px 5px;border-radius:99px;margin-left:4px">${row.tag}</span>`:''}</td>
+        ${row.values.map((v,i)=>{
+          const m=meses[i];
+          const bg=colBg(m);
+          if(row.zeroHide&&v===0) return `<td style="padding:5px 10px;text-align:right;color:var(--border);font-size:10px;background:${bg}">—</td>`;
+          return `<td style="padding:5px 10px;text-align:right;color:${row.color||'var(--t2)'};font-size:10px;background:${bg}">${row.neg?'-':'+'}${f2(v)}</td>`;
         }).join('')}
-      </tbody>
-    </table>
-  </div>
-  <div style="background:#f0fdf4;border-radius:12px;padding:12px;margin-top:12px;font-size:11px;color:var(--green-t)">
-    <div style="font-weight:600;margin-bottom:4px">Em ${meses.length} meses</div>
-    <div>Patrimônio estimado: <strong>${fmt(meses[meses.length-1]?.acumulado||0)}</strong></div>
-    <div style="color:#4ade80;margin-top:2px;font-size:10px">+${fmt((meses[meses.length-1]?.acumulado||0)-d.saldoAtual)} vs hoje</div>
+      </tr>`;
+      return;
+    }
+    if(row.type==='total'||row.type==='result'){
+      const borderStyle=row.border?'border-top:2px solid var(--border)':'border-top:.5px solid var(--border)';
+      html+=`<tr style="${borderStyle}">
+        <td style="padding:${row.big?'9px':'7px'} 12px;font-weight:700;font-size:${row.big?'13px':'11px'};color:${row.color||'var(--t1)'};${stickyCol};background:${row.bg||'var(--bg)'};white-space:nowrap;${borderStyle}">${row.label}</td>
+        ${meses.map(m=>{
+          const v=m[row.key]||0;
+          const bg=colBg(m)||row.bg||'';
+          if(row.dynamic){
+            const c=v>=0?'var(--green-t)':'var(--red-t)';
+            return `<td style="padding:${row.big?'9px':'7px'} 10px;text-align:right;font-weight:700;font-size:${row.big?'13px':'11px'};color:${c};background:${bg};white-space:nowrap">${v>=0?'+':'- '}${f2(v)}</td>`;
+          }
+          const c=row.color||'var(--t1)';
+          return `<td style="padding:${row.big?'9px':'7px'} 10px;text-align:right;font-weight:700;font-size:${row.big?'13px':'11px'};color:${c};background:${bg};white-space:nowrap">${row.neg?'- ':''}${f2(Math.abs(v))}</td>`;
+        }).join('')}
+      </tr>`;
+    }
+  });
+
+  html+=`</tbody></table></div>
+  <div style="background:var(--green-bg);border-radius:12px;padding:14px;margin-top:14px">
+    <div style="font-size:9px;font-weight:700;color:var(--green-t);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Crescimento projetado</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--t2)">Hoje</span>
+      <span style="font-size:12px;font-weight:500">${fmt(hoje)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--t2)">Em 12 meses</span>
+      <span style="font-size:12px;font-weight:500;color:var(--green-t)">${fmt(em12)} <span style="font-size:10px;color:#4ade80">+${fmt(em12-hoje)}</span></span>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      <span style="font-size:12px;color:var(--t2)">Em 18 meses</span>
+      <span style="font-size:12px;font-weight:600;color:var(--green-t)">${fmt(em18)} <span style="font-size:10px;color:#4ade80">+${fmt(em18-hoje)}</span></span>
+    </div>
   </div>`;
+
   document.getElementById('proj-tabela').innerHTML=html;
 }
+
+const var_green_t='var(--green-t)';
 </script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/service-worker.js').catch(()=>{})</script>
 </body>
